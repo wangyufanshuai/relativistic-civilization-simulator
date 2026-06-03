@@ -1,6 +1,7 @@
 const { chromium } = require("playwright");
 
 const appUrl = process.env.APP_URL || "http://127.0.0.1:4173";
+const apiHealthUrl = new URL("/api/health", appUrl).toString();
 
 async function waitForApp(page) {
   for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -14,17 +15,15 @@ async function waitForApp(page) {
   throw new Error(`App did not become reachable at ${appUrl}`);
 }
 
-async function waitForApi(page) {
+async function waitForApiProxy() {
   for (let attempt = 0; attempt < 60; attempt += 1) {
-    const health = await page.evaluate(async () => {
-      try {
-        const response = await fetch("/api/health");
-        return response.ok ? response.json() : { status: "bad", code: response.status };
-      } catch (error) {
-        return { status: "bad", error: error instanceof Error ? error.message : "unknown" };
-      }
-    });
-    if (health.status === "ok") return health;
+    try {
+      const response = await fetch(apiHealthUrl);
+      const health = response.ok ? await response.json() : { status: "bad", code: response.status };
+      if (health.status === "ok") return health;
+    } catch {
+      // Preview or backend may still be booting.
+    }
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   throw new Error("API health did not become ready through the preview proxy");
@@ -39,8 +38,8 @@ async function main() {
     if (message.type() === "error") errors.push(message.text());
   });
 
+  await waitForApiProxy();
   await waitForApp(page);
-  await waitForApi(page);
 
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("simulation online"), null, { timeout: 20000 });
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("capabilities"), null, { timeout: 20000 });
