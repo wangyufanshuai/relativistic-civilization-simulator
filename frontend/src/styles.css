@@ -1,0 +1,989 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #05070c;
+  color: #eef7ff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --bg: #05070c;
+  --panel: rgba(12, 18, 28, 0.88);
+  --panel-strong: rgba(17, 25, 39, 0.96);
+  --line: rgba(148, 163, 184, 0.18);
+  --text: #eef7ff;
+  --muted: #8ea3b8;
+  --cyan: #22d3ee;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --green: #22c55e;
+  --violet: #a78bfa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 26% 12%, rgba(34, 211, 238, 0.14), transparent 28%),
+    radial-gradient(circle at 78% 30%, rgba(245, 158, 11, 0.08), transparent 26%),
+    var(--bg);
+}
+
+button,
+select {
+  font: inherit;
+}
+
+button {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+button:hover:not(:disabled) {
+  border-color: rgba(34, 211, 238, 0.65);
+  background: rgba(14, 39, 55, 0.92);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+button.primary {
+  border-color: rgba(34, 211, 238, 0.58);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(20, 184, 166, 0.12));
+}
+
+select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  background: #0b1220;
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.appShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+}
+
+.rail {
+  border-right: 1px solid var(--line);
+  background: rgba(3, 7, 18, 0.82);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 10px;
+}
+
+.brandMark,
+.railButton {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+}
+
+.brandMark {
+  display: grid;
+  place-items: center;
+  background: #d9f7ff;
+  color: #031521;
+  margin-bottom: 8px;
+}
+
+.railButton {
+  padding: 0;
+  color: #8ea3b8;
+}
+
+.railButton.active {
+  color: var(--cyan);
+  border-color: rgba(34, 211, 238, 0.5);
+}
+
+.workspace {
+  min-width: 0;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.topbar,
+.metricStrip,
+.modeBar,
+.scenePanel,
+.eventLog,
+.panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+}
+
+.topbar {
+  min-height: 72px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 18px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.05;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.topbar p,
+.scenarioCopy,
+.chroniclePanel p,
+.empty {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.statusCluster {
+  min-width: 106px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 9px;
+  color: #cdefff;
+  font-size: 13px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.7);
+}
+
+.dot.active {
+  background: var(--amber);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.75);
+}
+
+.metricStrip {
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+}
+
+.metricTile {
+  min-height: 86px;
+  background: rgba(15, 23, 42, 0.64);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.metricTile span,
+.panelHeader span,
+.sceneHeader span,
+.readoutGrid dt,
+.polityRow span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.metricTile strong {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.meter {
+  height: 3px;
+  background: rgba(148, 163, 184, 0.16);
+  overflow: hidden;
+}
+
+.meter i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--amber));
+}
+
+.contentGrid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+}
+
+.mainColumn,
+.inspector {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modeBar {
+  min-height: 46px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #c9d7e6;
+}
+
+.modeBar div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.modeBar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenePanel {
+  position: relative;
+  min-height: 560px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sceneHeader {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.sceneHeader strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.sceneLegend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sceneLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(3, 7, 18, 0.5);
+  border-radius: 8px;
+}
+
+.sceneLegend i,
+.polityRow i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legendCyan {
+  background: var(--cyan);
+}
+
+.legendAmber {
+  background: var(--amber);
+}
+
+.legendViolet {
+  background: var(--violet);
+}
+
+.sceneCanvas {
+  width: 100%;
+  height: 560px;
+}
+
+.systemPopover {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  max-width: min(360px, calc(100% - 28px));
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  background: rgba(3, 7, 18, 0.78);
+  padding: 12px;
+  display: grid;
+  gap: 5px;
+}
+
+.systemPopover span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.eventLog,
+.panel {
+  border-radius: 8px;
+}
+
+.panel,
+.eventLog {
+  padding: 14px;
+}
+
+.panelHeader {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panelHeader strong {
+  font-size: 13px;
+}
+
+.buttonRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.15fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.readoutGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+}
+
+.readoutGrid div {
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.readoutGrid dd {
+  margin: 5px 0 0;
+  font-size: 20px;
+  font-weight: 720;
+}
+
+.polityList {
+  display: grid;
+  gap: 9px;
+}
+
+.polityRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.polityRow div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.polityRow strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.chroniclePanel button {
+  width: 100%;
+}
+
+.eventList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.eventItem {
+  min-height: 72px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-left: 3px solid var(--cyan);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.54);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.eventItem.war {
+  border-left-color: var(--red);
+}
+
+.eventItem.trade {
+  border-left-color: var(--amber);
+}
+
+.eventItem.politics {
+  border-left-color: var(--violet);
+}
+
+.eventItem > span {
+  color: var(--cyan);
+  font-weight: 720;
+}
+
+.eventItem strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.eventItem p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.timelineReplay {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 12px 14px;
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.timelineHeader div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.timelineHeader span,
+.timelineTicks,
+.riskList dt,
+.riskPanel p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.timelineHeader strong {
+  font-size: 16px;
+}
+
+.timelineButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.timelineReplay input[type="range"] {
+  width: 100%;
+  accent-color: var(--cyan);
+}
+
+.timelineTicks {
+  display: flex;
+  justify-content: space-between;
+}
+
+.riskPanel {
+  display: grid;
+  gap: 10px;
+}
+
+.stackedRisk {
+  display: flex;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.stackedRisk i {
+  display: block;
+  min-width: 2px;
+}
+
+.riskList {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.riskList div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.riskList dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.riskList dt i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.riskList dd {
+  margin: 0;
+  font-weight: 720;
+}
+
+.riskPanel p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.experimentShell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.experimentHero {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.12), transparent 42%),
+    rgba(12, 18, 28, 0.88);
+  min-height: 148px;
+  padding: 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.experimentHero span,
+.experimentControls label,
+.chartEmpty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.experimentHero h2 {
+  margin: 8px 0 8px;
+  font-size: clamp(24px, 4vw, 42px);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.experimentHero p,
+.conclusionPanel p {
+  max-width: 780px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.modeSwitch {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  background: rgba(3, 7, 18, 0.42);
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.modeSwitch button {
+  border-color: transparent;
+  background: transparent;
+  min-width: 128px;
+}
+
+.modeSwitch button.active {
+  border-color: rgba(34, 211, 238, 0.38);
+  background: rgba(34, 211, 238, 0.14);
+  color: var(--text);
+}
+
+.experimentGrid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.counterGrid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.experimentControls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.experimentControls label {
+  display: grid;
+  gap: 6px;
+}
+
+.experimentControls button {
+  width: 100%;
+}
+
+.chartPanel {
+  min-width: 0;
+  min-height: 340px;
+}
+
+.counterChartPanel {
+  min-height: 390px;
+}
+
+.experimentChart {
+  width: 100%;
+  min-height: 260px;
+  display: block;
+  overflow: visible;
+}
+
+.experimentChart text {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+.axisLine {
+  stroke: rgba(148, 163, 184, 0.35);
+  stroke-width: 1;
+}
+
+.chartLine {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.35));
+}
+
+.originalLine {
+  stroke: var(--cyan);
+}
+
+.counterLine {
+  stroke: var(--amber);
+}
+
+.chartPoint,
+.scatterPoint {
+  fill: var(--amber);
+  stroke: #08111f;
+  stroke-width: 2;
+}
+
+.legendOriginal {
+  fill: var(--cyan);
+}
+
+.legendCounter {
+  fill: var(--amber);
+}
+
+.scatterPoint {
+  fill: var(--cyan);
+}
+
+.chartEmpty {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+}
+
+.conclusionPanel {
+  grid-column: 1 / -1;
+}
+
+.counterSummary {
+  grid-column: 1 / -1;
+}
+
+.conclusionPanel > strong {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.conclusionPanel .readoutGrid {
+  margin-top: 14px;
+  max-width: 460px;
+}
+
+.peakBreakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.peakBreakdown span {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.55);
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.peakBreakdown strong {
+  color: var(--text);
+}
+
+.resultsPanel {
+  overflow: hidden;
+}
+
+.resultsTable {
+  display: grid;
+  gap: 1px;
+  overflow-x: auto;
+}
+
+.tableHeader,
+.tableRow {
+  min-width: 760px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.tableHeader {
+  color: var(--muted);
+  font-size: 12px;
+  background: rgba(3, 7, 18, 0.52);
+}
+
+.tableRow {
+  background: rgba(15, 23, 42, 0.5);
+  font-size: 13px;
+}
+
+.tableRow strong {
+  color: var(--cyan);
+}
+
+.branchHeader,
+.branchRow {
+  min-width: 520px;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.reportPanel pre {
+  margin: 0;
+  max-height: 360px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.scenarioCompareGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.compareCard {
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.55);
+  padding: 12px;
+  display: grid;
+  gap: 7px;
+  min-height: 112px;
+}
+
+.compareCard strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.compareCard span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1120px) {
+  .metricStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inspector {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .experimentGrid,
+  .counterGrid,
+  .scenarioCompareGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .experimentControls,
+  .conclusionPanel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+
+  .rail {
+    position: static;
+    z-index: 8;
+    height: 58px;
+    flex-direction: row;
+    justify-content: center;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 8px;
+  }
+
+  .brandMark,
+  .railButton {
+    width: 38px;
+    height: 38px;
+  }
+
+  .workspace {
+    padding: 10px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .metricStrip,
+  .inspector,
+  .experimentGrid,
+  .counterGrid,
+  .scenarioCompareGrid,
+  .eventList {
+    grid-template-columns: 1fr;
+  }
+
+  .experimentHero {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .experimentHero button,
+  .modeSwitch {
+    width: 100%;
+  }
+
+  .modeSwitch {
+    flex-direction: column;
+  }
+
+  .chartPanel {
+    min-height: 300px;
+  }
+
+  .scenePanel {
+    min-height: 420px;
+  }
+
+  .sceneCanvas {
+    height: 420px;
+  }
+
+  .sceneHeader {
+    position: static;
+    padding: 12px;
+    background: rgba(3, 7, 18, 0.72);
+  }
+
+  .modeBar,
+  .sceneHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .modeBar span {
+    white-space: normal;
+  }
+
+  .buttonRow {
+    grid-template-columns: 1fr;
+  }
+
+  .timelineHeader,
+  .timelineButtons {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
