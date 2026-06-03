@@ -1,6 +1,6 @@
 import React from "react";
 import { Activity, CircleDot, FlaskConical, FolderArchive, Network, Orbit, RadioTower, ShieldAlert } from "lucide-react";
-import { chronicle, listScenarios, listSnapshots, runSimulation, startSimulation, stepSimulation } from "./lib/api";
+import { chronicle, diagnostics, listScenarios, listSnapshots, runSimulation, startSimulation, stepSimulation } from "./lib/api";
 import { ArchiveView } from "./components/ArchiveView";
 import { EventLog } from "./components/EventLog";
 import { ExperimentsView } from "./components/ExperimentsView";
@@ -8,7 +8,7 @@ import { Inspector } from "./components/Inspector";
 import { MetricStrip } from "./components/MetricStrip";
 import { SceneViewport } from "./components/SceneViewport";
 import { TimelineReplay } from "./components/TimelineReplay";
-import type { Scenario, WorldSnapshot, WorldState } from "./types/sim";
+import type { Diagnostics, Scenario, WorldSnapshot, WorldState } from "./types/sim";
 
 export default function App() {
   const [scenarios, setScenarios] = React.useState<Scenario[]>([]);
@@ -22,6 +22,7 @@ export default function App() {
   const [status, setStatus] = React.useState("initializing relativistic model");
   const [chronicleText, setChronicleText] = React.useState("");
   const [view, setView] = React.useState<"simulation" | "experiments" | "archive">("simulation");
+  const [systemDiagnostics, setSystemDiagnostics] = React.useState<Diagnostics>();
 
   React.useEffect(() => {
     void bootstrap();
@@ -57,7 +58,8 @@ export default function App() {
   }
 
   async function bootstrap() {
-    const loadedScenarios = await runTask("loading scenarios", listScenarios);
+    const [loadedScenarios, loadedDiagnostics] = await runTask("loading scenarios", () => Promise.all([listScenarios(), diagnostics()]));
+    setSystemDiagnostics(loadedDiagnostics);
     setScenarios(loadedScenarios);
     const initial = await runTask("starting baseline_empire", () => startSimulation("baseline_empire", 42));
     await applyWorld(initial);
@@ -133,6 +135,11 @@ export default function App() {
           <div>
             <h1>Relativistic Civilization Simulator</h1>
             <p>{status}</p>
+            {systemDiagnostics && (
+              <p className="diagnosticsLine">
+                v{systemDiagnostics.version} · {systemDiagnostics.archive.run_count} archived runs · {systemDiagnostics.archive.snapshot_count} snapshots · {systemDiagnostics.capabilities.length} capabilities
+              </p>
+            )}
           </div>
           <div className="statusCluster">
             <span className={busy ? "dot active" : "dot"} />

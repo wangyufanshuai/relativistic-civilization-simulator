@@ -43,6 +43,7 @@ async function main() {
   await waitForApi(page);
 
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("simulation online"), null, { timeout: 20000 });
+  await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("capabilities"), null, { timeout: 20000 });
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("3d relativistic star graph"), null, { timeout: 20000 });
 
   await page.getByLabel("experiments").click();

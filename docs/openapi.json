@@ -725,6 +725,26 @@
         "summary": "Unpin Archive Run"
       }
     },
+    "/api/diagnostics": {
+      "get": {
+        "operationId": "diagnostics_api_diagnostics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Diagnostics Api Diagnostics Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Diagnostics"
+      }
+    },
     "/api/experiments/compare": {
       "get": {
         "operationId": "compare_api_experiments_compare_get",

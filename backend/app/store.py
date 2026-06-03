@@ -5,7 +5,7 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-from app.models import ArchivedRun, ArchiveRunDetail, WorldSnapshot, WorldState
+from app.models import ArchivedRun, ArchiveRunDetail, ArchiveStats, WorldSnapshot, WorldState
 
 
 class SimulationStore:
@@ -77,6 +77,25 @@ class SimulationStore:
                 """
             ).fetchall()
         return [self._archived_run_from_row(row) for row in rows]
+
+    def archive_stats(self) -> ArchiveStats:
+        with self._connect() as db:
+            run_row = db.execute(
+                """
+                SELECT
+                    COUNT(*) AS run_count,
+                    COALESCE(SUM(pinned), 0) AS pinned_count,
+                    COALESCE(SUM(CASE WHEN report_text IS NOT NULL AND report_text != '' THEN 1 ELSE 0 END), 0) AS report_count
+                FROM runs
+                """
+            ).fetchone()
+            snapshot_row = db.execute("SELECT COUNT(*) AS snapshot_count FROM snapshots").fetchone()
+        return ArchiveStats(
+            run_count=int(run_row["run_count"]),
+            pinned_count=int(run_row["pinned_count"]),
+            snapshot_count=int(snapshot_row["snapshot_count"]),
+            report_count=int(run_row["report_count"]),
+        )
 
     def archive_detail(self, run_id: str) -> ArchiveRunDetail:
         world = self.get(run_id)

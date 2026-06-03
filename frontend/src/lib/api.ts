@@ -3,6 +3,7 @@ import type {
   ArchiveRunDetail,
   CounterfactualOverrides,
   CounterfactualResult,
+  Diagnostics,
   MonteCarloResult,
   Scenario,
   ScenarioCompareResult,
@@ -34,6 +35,10 @@ async function requestText(path: string, init?: RequestInit): Promise<string> {
 
 export function listScenarios(): Promise<Scenario[]> {
   return request<Scenario[]>("/api/scenarios");
+}
+
+export function diagnostics(): Promise<Diagnostics> {
+  return request<Diagnostics>("/api/diagnostics");
 }
 
 export function startSimulation(scenario: string, seed = 42): Promise<WorldState> {

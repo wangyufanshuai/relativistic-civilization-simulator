@@ -250,6 +250,23 @@ export interface ArchiveRunDetail {
   snapshots: WorldSnapshot[];
 }
 
+export interface ArchiveStats {
+  run_count: number;
+  pinned_count: number;
+  snapshot_count: number;
+  report_count: number;
+}
+
+export interface Diagnostics {
+  service: string;
+  version: string;
+  status: "ok";
+  archive: ArchiveStats;
+  database_path: string;
+  scenario_count: number;
+  capabilities: string[];
+}
+
 export interface MetricStats {
   mean: number;
   stddev: number;

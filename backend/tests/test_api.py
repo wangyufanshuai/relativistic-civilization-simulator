@@ -9,6 +9,12 @@ client = TestClient(app)
 
 def test_api_simulation_flow_and_exports() -> None:
     assert client.get("/api/health").json()["status"] == "ok"
+    diagnostics = client.get("/api/diagnostics").json()
+    assert diagnostics["status"] == "ok"
+    assert diagnostics["version"]
+    assert diagnostics["archive"]["run_count"] >= 0
+    assert diagnostics["scenario_count"] >= 6
+    assert {"persistent_archive", "sensitivity_analysis", "openapi_contract"} <= set(diagnostics["capabilities"])
     scenarios = client.get("/api/scenarios").json()
     assert {scenario["id"] for scenario in scenarios} >= {"baseline_empire", "federated_network"}
 

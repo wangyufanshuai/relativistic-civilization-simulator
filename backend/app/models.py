@@ -430,3 +430,20 @@ class ArchiveRunDetail(BaseModel):
     metrics: list[RelativisticMetrics]
     events: list[Event]
     snapshots: list[WorldSnapshot]
+
+
+class ArchiveStats(BaseModel):
+    run_count: int
+    pinned_count: int
+    snapshot_count: int
+    report_count: int
+
+
+class Diagnostics(BaseModel):
+    service: str
+    version: str
+    status: Literal["ok"]
+    archive: ArchiveStats
+    database_path: str
+    scenario_count: int
+    capabilities: list[str]

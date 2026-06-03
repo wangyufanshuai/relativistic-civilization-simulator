@@ -165,6 +165,12 @@ select {
   line-height: 1.45;
 }
 
+.topbar .diagnosticsLine {
+  margin-top: 2px;
+  color: #7dd3fc;
+  font-size: 12px;
+}
+
 .statusCluster {
   min-width: 106px;
   display: flex;

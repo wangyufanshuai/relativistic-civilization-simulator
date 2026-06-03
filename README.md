@@ -112,6 +112,14 @@ The experiment bench is split into smaller React modules under `frontend/src/com
 - `constants.ts` and `utils.ts` centralize metric labels, presets, formatting, and chart helpers.
 - `ExperimentsView.tsx` now focuses on state orchestration and API calls.
 
+## v1.3 Runtime Diagnostics
+
+The backend exposes `GET /api/diagnostics` for deployment and demo observability:
+
+- Service version, scenario count, capability flags, archive counts, report counts, and SQLite archive path.
+- The frontend top bar shows a compact diagnostics summary after bootstrap.
+- Browser smoke checks verify the diagnostics surface renders through the preview proxy.
+
 ## Run Backend
 
 ```powershell
@@ -133,6 +141,7 @@ Open the Vite URL, normally `http://localhost:5173`.
 ## API
 
 - `GET /api/health`
+- `GET /api/diagnostics`
 - `GET /api/scenarios`
 - `POST /api/simulations/start`
 - `POST /api/simulations/step`

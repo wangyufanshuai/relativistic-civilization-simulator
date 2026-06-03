@@ -16,6 +16,7 @@ def test_openapi_contract_includes_public_routes() -> None:
     paths = set(app.openapi()["paths"])
     expected = {
         "/api/health",
+        "/api/diagnostics",
         "/api/scenarios",
         "/api/simulations/start",
         "/api/simulations/step",

@@ -14,6 +14,7 @@ from app.models import (
     CounterfactualBranch,
     CounterfactualRequest,
     CounterfactualResult,
+    Diagnostics,
     Event,
     EventType,
     ExperimentRun,
@@ -52,10 +53,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+SERVICE_VERSION = "1.3.0"
+CAPABILITIES = [
+    "timeline_replay",
+    "risk_breakdown",
+    "counterfactual_fork",
+    "cold_war_metrics",
+    "persistent_archive",
+    "monte_carlo",
+    "sensitivity_analysis",
+    "openapi_contract",
+    "browser_smoke_ci",
+]
+
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "Relativistic Civilization Simulator"}
+
+
+@app.get("/api/diagnostics")
+def diagnostics() -> dict[str, object]:
+    return Diagnostics(
+        service="Relativistic Civilization Simulator",
+        version=SERVICE_VERSION,
+        status="ok",
+        archive=store.archive_stats(),
+        database_path=str(store.db_path),
+        scenario_count=len(SCENARIOS),
+        capabilities=CAPABILITIES,
+    ).model_dump(mode="json")
 
 
 @app.get("/api/scenarios")
