@@ -62,6 +62,14 @@ The project now includes the first productization layer:
 - Markdown report generation is available for both parameter sweeps and counterfactual experiments.
 - Frontend reports can be copied or downloaded directly from the experiment workspace.
 
+## v0.7 Persistent Research Archive
+
+Simulation runs are archived locally in `data/archive.sqlite`:
+
+- Runs, metrics, events, snapshots, and generated reports survive backend restarts.
+- The `Archive` workspace lists saved runs with split risk, cold-war risk, polity count, and snapshot count.
+- Archived runs can be pinned, deleted, previewed as Markdown reports, exported as CSV, and loaded back into Simulation replay.
+
 ## Run Backend
 
 ```powershell
@@ -92,6 +100,13 @@ Open the Vite URL, normally `http://localhost:5173`.
 - `GET /api/simulations/{run_id}/events`
 - `GET /api/simulations/{run_id}/snapshots`
 - `POST /api/simulations/fork`
+- `GET /api/archive/runs`
+- `GET /api/archive/runs/{run_id}`
+- `GET /api/archive/runs/{run_id}/snapshots`
+- `GET /api/archive/runs/{run_id}/report.md`
+- `DELETE /api/archive/runs/{run_id}`
+- `POST /api/archive/runs/{run_id}/pin`
+- `POST /api/archive/runs/{run_id}/unpin`
 - `GET /api/experiments/compare`
 - `POST /api/experiments/sweep`
 - `POST /api/experiments/counterfactual`

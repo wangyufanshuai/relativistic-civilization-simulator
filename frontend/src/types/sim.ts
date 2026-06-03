@@ -227,3 +227,25 @@ export interface CounterfactualResult {
   delta: CausalDelta;
   summary: string;
 }
+
+export interface ArchivedRun {
+  run_id: string;
+  scenario: string;
+  year: number;
+  created_at: string;
+  updated_at: string;
+  pinned: boolean;
+  final_metrics: Metric;
+  config: WorldState["config"];
+  event_count: number;
+  snapshot_count: number;
+  report_available: boolean;
+}
+
+export interface ArchiveRunDetail {
+  summary: ArchivedRun;
+  state: WorldState;
+  metrics: Metric[];
+  events: SimEvent[];
+  snapshots: WorldSnapshot[];
+}

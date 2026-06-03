@@ -119,6 +119,64 @@ def snapshots(run_id: str) -> list[dict[str, object]]:
         raise HTTPException(status_code=404, detail="simulation not found") from exc
 
 
+@app.get("/api/archive/runs")
+def archive_runs() -> list[dict[str, object]]:
+    return [run.model_dump(mode="json") for run in store.list_archive()]
+
+
+@app.get("/api/archive/runs/{run_id}")
+def archive_run(run_id: str) -> dict[str, object]:
+    try:
+        return store.archive_detail(run_id).model_dump(mode="json")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="archived run not found") from exc
+
+
+@app.get("/api/archive/runs/{run_id}/snapshots")
+def archive_snapshots(run_id: str) -> list[dict[str, object]]:
+    try:
+        return [snapshot.model_dump(mode="json") for snapshot in store.snapshots(run_id)]
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="archived run not found") from exc
+
+
+@app.get("/api/archive/runs/{run_id}/report.md", response_class=PlainTextResponse)
+def archive_report(run_id: str) -> str:
+    try:
+        report_text = store.report(run_id)
+        if not report_text:
+            report_text = markdown_report(store.get(run_id))
+            store.save_report(run_id, report_text)
+        return report_text
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="archived run not found") from exc
+
+
+@app.delete("/api/archive/runs/{run_id}")
+def delete_archive_run(run_id: str) -> dict[str, str]:
+    try:
+        store.delete_archive(run_id)
+        return {"status": "deleted", "run_id": run_id}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="archived run not found") from exc
+
+
+@app.post("/api/archive/runs/{run_id}/pin")
+def pin_archive_run(run_id: str) -> dict[str, object]:
+    try:
+        return store.set_pinned(run_id, True).model_dump(mode="json")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="archived run not found") from exc
+
+
+@app.post("/api/archive/runs/{run_id}/unpin")
+def unpin_archive_run(run_id: str) -> dict[str, object]:
+    try:
+        return store.set_pinned(run_id, False).model_dump(mode="json")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="archived run not found") from exc
+
+
 @app.post("/api/simulations/fork")
 def fork_simulation(request: ForkSimulationRequest) -> dict[str, object]:
     try:
@@ -218,9 +276,7 @@ def counterfactual(request: CounterfactualRequest) -> dict[str, object]:
         _add_fork_event(counter, base.run_id, snapshot.year)
 
     store.put(counter)
-    store.reset_snapshots(counter)
-    for item in counter_snaps:
-        store.snapshots(counter.run_id).append(item)
+    store.replace_snapshots(counter.run_id, counter_snaps)
 
     original_branch = _counterfactual_branch(original, original_snaps)
     counter_branch = _counterfactual_branch(counter, counter_snaps)
@@ -240,7 +296,14 @@ def counterfactual(request: CounterfactualRequest) -> dict[str, object]:
 
 @app.post("/api/experiments/report")
 def report_experiment(request: ExperimentReportRequest) -> dict[str, str]:
-    return {"markdown": experiment_report(request.kind, request.payload)}
+    markdown = experiment_report(request.kind, request.payload)
+    run_id = request.payload.get("fork_run_id") or request.payload.get("run_id")
+    if isinstance(run_id, str):
+        try:
+            store.save_report(run_id, markdown)
+        except KeyError:
+            pass
+    return {"markdown": markdown}
 
 
 @app.post("/api/ai/chronicle")
@@ -453,7 +516,9 @@ def _snapshot_for_experiment(world: WorldState) -> WorldSnapshot:
 @app.get("/api/report/{run_id}.md", response_class=PlainTextResponse)
 def report(run_id: str) -> str:
     try:
-        return markdown_report(store.get(run_id))
+        report_text = markdown_report(store.get(run_id))
+        store.save_report(run_id, report_text)
+        return report_text
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="simulation not found") from exc
 

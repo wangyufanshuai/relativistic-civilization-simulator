@@ -1,4 +1,6 @@
 import type {
+  ArchivedRun,
+  ArchiveRunDetail,
   CounterfactualOverrides,
   CounterfactualResult,
   Scenario,
@@ -18,6 +20,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`${response.status} ${response.statusText}`);
   }
   return response.json() as Promise<T>;
+}
+
+async function requestText(path: string, init?: RequestInit): Promise<string> {
+  const response = await fetch(path, init);
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+  return response.text();
 }
 
 export function listScenarios(): Promise<Scenario[]> {
@@ -102,4 +112,28 @@ export function experimentReport(kind: "counterfactual" | "sweep", payload: obje
     method: "POST",
     body: JSON.stringify({ kind, payload })
   });
+}
+
+export function listArchivedRuns(): Promise<ArchivedRun[]> {
+  return request<ArchivedRun[]>("/api/archive/runs");
+}
+
+export function getArchivedRun(runId: string): Promise<ArchiveRunDetail> {
+  return request<ArchiveRunDetail>(`/api/archive/runs/${runId}`);
+}
+
+export function getArchivedReport(runId: string): Promise<string> {
+  return requestText(`/api/archive/runs/${runId}/report.md`);
+}
+
+export function deleteArchivedRun(runId: string): Promise<{ status: string; run_id: string }> {
+  return request<{ status: string; run_id: string }>(`/api/archive/runs/${runId}`, { method: "DELETE" });
+}
+
+export function pinArchivedRun(runId: string): Promise<ArchivedRun> {
+  return request<ArchivedRun>(`/api/archive/runs/${runId}/pin`, { method: "POST" });
+}
+
+export function unpinArchivedRun(runId: string): Promise<ArchivedRun> {
+  return request<ArchivedRun>(`/api/archive/runs/${runId}/unpin`, { method: "POST" });
 }

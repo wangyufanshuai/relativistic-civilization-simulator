@@ -592,6 +592,12 @@ select {
   gap: 14px;
 }
 
+.archiveShell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .experimentHero {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -876,6 +882,71 @@ select {
   gap: 10px;
 }
 
+.archiveGrid {
+  display: grid;
+  grid-template-columns: 390px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.archiveListPanel,
+.archiveDetailPanel {
+  min-width: 0;
+}
+
+.archiveList {
+  display: grid;
+  gap: 9px;
+}
+
+.archiveRun {
+  width: 100%;
+  min-height: 86px;
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  gap: 5px;
+  text-align: left;
+  white-space: normal;
+}
+
+.archiveRun.active {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.12);
+}
+
+.archiveRun span,
+.archiveRun small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.archiveRun strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.archiveActions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.archiveActions a {
+  min-height: 38px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: #111827;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  text-decoration: none;
+  font-size: 13px;
+}
+
 .compareCard {
   border: 1px solid rgba(148, 163, 184, 0.15);
   border-radius: 8px;
@@ -912,6 +983,7 @@ select {
 
   .experimentGrid,
   .counterGrid,
+  .archiveGrid,
   .scenarioCompareGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -957,8 +1029,13 @@ select {
   .inspector,
   .experimentGrid,
   .counterGrid,
+  .archiveGrid,
   .scenarioCompareGrid,
   .eventList {
+    grid-template-columns: 1fr;
+  }
+
+  .archiveActions {
     grid-template-columns: 1fr;
   }
 

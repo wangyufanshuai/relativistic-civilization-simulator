@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.store import SimulationStore
 
 
 client = TestClient(app)
@@ -251,3 +252,52 @@ def test_fork_with_same_inputs_is_deterministic_except_run_id() -> None:
     second = client.post("/api/simulations/fork", json=payload).json()
     assert first["latest"] == second["latest"]
     assert first["metrics"] == second["metrics"]
+
+
+def test_archive_persists_run_snapshots_and_report() -> None:
+    body = client.post(
+        "/api/simulations/run",
+        json={"scenario": "baseline_empire", "seed": 51, "steps": 30, "include_snapshots": True},
+    ).json()
+    run_id = body["run_id"]
+    listing = client.get("/api/archive/runs").json()
+    archived = next(item for item in listing if item["run_id"] == run_id)
+    assert archived["scenario"] == "baseline_empire"
+    assert archived["snapshot_count"] >= 2
+    assert archived["final_metrics"]["cold_war"]
+
+    detail = client.get(f"/api/archive/runs/{run_id}").json()
+    assert detail["state"]["run_id"] == run_id
+    assert detail["snapshots"][0]["year"] == 0
+    assert detail["metrics"][-1]["year"] == 30
+
+    fresh_store = SimulationStore()
+    assert fresh_store.get(run_id).run_id == run_id
+    assert fresh_store.snapshots(run_id)[-1].year == 30
+
+    report = client.get(f"/api/archive/runs/{run_id}/report.md")
+    assert report.status_code == 200
+    assert report.text.startswith("# Relativistic Civilization Report")
+    assert client.get("/api/archive/runs").json()[0]["report_available"] in {True, False}
+
+
+def test_archive_pin_sort_and_delete() -> None:
+    first = client.post(
+        "/api/simulations/run",
+        json={"scenario": "slow_ships", "seed": 52, "steps": 10, "include_snapshots": True},
+    ).json()["run_id"]
+    second = client.post(
+        "/api/simulations/run",
+        json={"scenario": "federated_network", "seed": 53, "steps": 10, "include_snapshots": True},
+    ).json()["run_id"]
+
+    pinned = client.post(f"/api/archive/runs/{first}/pin")
+    assert pinned.status_code == 200
+    listing = client.get("/api/archive/runs").json()
+    assert listing[0]["run_id"] == first
+    assert listing[0]["pinned"] is True
+
+    assert client.post(f"/api/archive/runs/{first}/unpin").json()["pinned"] is False
+    assert client.delete(f"/api/archive/runs/{second}").status_code == 200
+    assert client.get(f"/api/archive/runs/{second}").status_code == 404
+    assert client.get("/api/archive/runs/missing").status_code == 404

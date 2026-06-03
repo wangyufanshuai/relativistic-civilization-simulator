@@ -326,3 +326,25 @@ class CounterfactualResult(BaseModel):
 class ExperimentReportRequest(BaseModel):
     kind: ExperimentReportKind
     payload: dict[str, Any]
+
+
+class ArchivedRun(BaseModel):
+    run_id: str
+    scenario: str
+    year: int
+    created_at: str
+    updated_at: str
+    pinned: bool = False
+    final_metrics: RelativisticMetrics
+    config: SimulationConfig
+    event_count: int
+    snapshot_count: int
+    report_available: bool = False
+
+
+class ArchiveRunDetail(BaseModel):
+    summary: ArchivedRun
+    state: WorldState
+    metrics: list[RelativisticMetrics]
+    events: list[Event]
+    snapshots: list[WorldSnapshot]

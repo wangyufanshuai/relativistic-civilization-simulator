@@ -1,6 +1,7 @@
 import React from "react";
-import { Activity, CircleDot, FlaskConical, Network, Orbit, RadioTower, ShieldAlert } from "lucide-react";
+import { Activity, CircleDot, FlaskConical, FolderArchive, Network, Orbit, RadioTower, ShieldAlert } from "lucide-react";
 import { chronicle, listScenarios, listSnapshots, runSimulation, startSimulation, stepSimulation } from "./lib/api";
+import { ArchiveView } from "./components/ArchiveView";
 import { EventLog } from "./components/EventLog";
 import { ExperimentsView } from "./components/ExperimentsView";
 import { Inspector } from "./components/Inspector";
@@ -20,7 +21,7 @@ export default function App() {
   const [busy, setBusy] = React.useState(false);
   const [status, setStatus] = React.useState("initializing relativistic model");
   const [chronicleText, setChronicleText] = React.useState("");
-  const [view, setView] = React.useState<"simulation" | "experiments">("simulation");
+  const [view, setView] = React.useState<"simulation" | "experiments" | "archive">("simulation");
 
   React.useEffect(() => {
     void bootstrap();
@@ -121,6 +122,7 @@ export default function App() {
         <div className="brandMark"><Orbit size={22} /></div>
         <RailIcon icon={<CircleDot size={18} />} active={view === "simulation"} label="simulation" onClick={() => setView("simulation")} />
         <RailIcon icon={<FlaskConical size={18} />} active={view === "experiments"} label="experiments" onClick={() => setView("experiments")} />
+        <RailIcon icon={<FolderArchive size={18} />} active={view === "archive"} label="archive" onClick={() => setView("archive")} />
         <RailIcon icon={<RadioTower size={18} />} label="messages" />
         <RailIcon icon={<Network size={18} />} label="polities" />
         <RailIcon icon={<ShieldAlert size={18} />} label="tension" />
@@ -184,8 +186,20 @@ export default function App() {
               />
             </section>
           </>
-        ) : (
+        ) : view === "experiments" ? (
           <ExperimentsView scenarios={scenarios} busy={busy} setBusy={setBusy} setStatus={setStatus} />
+        ) : (
+          <ArchiveView
+            busy={busy}
+            setBusy={setBusy}
+            setStatus={setStatus}
+            onLoadRun={async (archivedWorld) => {
+              await applyWorld(archivedWorld);
+              setScenario(archivedWorld.config.scenario);
+              setSelectedSystemId("sol");
+              setView("simulation");
+            }}
+          />
         )}
       </section>
     </main>
