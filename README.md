@@ -70,6 +70,14 @@ Simulation runs are archived locally in `data/archive.sqlite`:
 - The `Archive` workspace lists saved runs with split risk, cold-war risk, polity count, and snapshot count.
 - Archived runs can be pinned, deleted, previewed as Markdown reports, exported as CSV, and loaded back into Simulation replay.
 
+## v0.8 Monte Carlo Research Mode
+
+The experiment workspace now includes multi-seed research mode:
+
+- Run 3-100 deterministic seeds for the same scenario.
+- Estimate split probability, mean split risk, escalation risk, central control, trade throughput, standard deviation, and 95% confidence intervals.
+- Review seed-level outcomes in a table and compare uncertainty bands in a lightweight SVG chart.
+
 ## Run Backend
 
 ```powershell
@@ -110,6 +118,7 @@ Open the Vite URL, normally `http://localhost:5173`.
 - `GET /api/experiments/compare`
 - `POST /api/experiments/sweep`
 - `POST /api/experiments/counterfactual`
+- `POST /api/experiments/monte-carlo`
 - `POST /api/experiments/report`
 - `POST /api/ai/chronicle`
 - `GET /api/report/{run_id}.md`

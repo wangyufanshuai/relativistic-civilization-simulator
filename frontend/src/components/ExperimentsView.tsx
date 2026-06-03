@@ -1,9 +1,11 @@
 import React from "react";
 import { BarChart3, Clipboard, Download, FileText, FlaskConical, GitCompareArrows, LineChart, SlidersHorizontal } from "lucide-react";
-import { compareScenarios, experimentReport, runCounterfactual, runSimulation, runSweep } from "../lib/api";
+import { compareScenarios, experimentReport, runCounterfactual, runMonteCarlo, runSimulation, runSweep } from "../lib/api";
 import type {
   CounterfactualResult,
   ExperimentMetricKey,
+  MetricStats,
+  MonteCarloResult,
   Metric,
   RiskBreakdown,
   Scenario,
@@ -85,7 +87,7 @@ interface ExperimentsViewProps {
 }
 
 export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: ExperimentsViewProps) {
-  const [mode, setMode] = React.useState<"sweep" | "counterfactual">("sweep");
+  const [mode, setMode] = React.useState<"sweep" | "counterfactual" | "monteCarlo">("sweep");
   const [scenario, setScenario] = React.useState("baseline_empire");
   const [parameter, setParameter] = React.useState<SweepParameter>("centralization");
   const [metric, setMetric] = React.useState<ExperimentMetricKey>("split_risk");
@@ -99,6 +101,10 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
   const [counterfactual, setCounterfactual] = React.useState<CounterfactualResult>();
   const [reportText, setReportText] = React.useState("");
   const [sweepReportText, setSweepReportText] = React.useState("");
+  const [monteCarlo, setMonteCarlo] = React.useState<MonteCarloResult>();
+  const [monteSteps, setMonteSteps] = React.useState(120);
+  const [seedStart, setSeedStart] = React.useState(100);
+  const [seedCount, setSeedCount] = React.useState(20);
 
   React.useEffect(() => {
     void handleRunSweep();
@@ -154,6 +160,12 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
     setSweepReportText(result.markdown);
   }
 
+  async function handleMonteCarlo() {
+    const seeds = Array.from({ length: Math.max(3, seedCount) }, (_, index) => seedStart + index);
+    const result = await runExperimentTask("running monte carlo", () => runMonteCarlo(scenario, seeds, monteSteps));
+    setMonteCarlo(result);
+  }
+
   function handleParameterChange(next: SweepParameter) {
     setParameter(next);
     setSweepValues(parameterDefaults[next]);
@@ -181,7 +193,7 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
     <section className="experimentShell">
       <div className="experimentHero">
         <div>
-          <span>v0.5 faction dynamics and cold war lab</span>
+          <span>v0.8 monte carlo research lab</span>
           <h2>Which intervention changes imperial history?</h2>
           <p>
             Compare parameter sweeps, then fork a historical snapshot and test whether a different governance policy
@@ -194,6 +206,9 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
           </button>
           <button className={mode === "counterfactual" ? "active" : ""} onClick={() => setMode("counterfactual")}>
             Counterfactual
+          </button>
+          <button className={mode === "monteCarlo" ? "active" : ""} onClick={() => setMode("monteCarlo")}>
+            Monte Carlo
           </button>
         </div>
       </div>
@@ -219,7 +234,7 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
           handleSweepReport={handleSweepReport}
           reportText={sweepReportText}
         />
-      ) : (
+      ) : mode === "counterfactual" ? (
         <CounterfactualWorkspace
           busy={busy}
           scenario={scenario}
@@ -241,8 +256,98 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
           handleCounterfactual={handleCounterfactual}
           handleReport={handleReport}
         />
+      ) : (
+        <MonteCarloWorkspace
+          busy={busy}
+          scenario={scenario}
+          scenarios={scenarios}
+          selectedScenario={selectedScenario}
+          steps={monteSteps}
+          seedStart={seedStart}
+          seedCount={seedCount}
+          result={monteCarlo}
+          setScenario={setScenario}
+          setSteps={setMonteSteps}
+          setSeedStart={setSeedStart}
+          setSeedCount={setSeedCount}
+          handleRun={handleMonteCarlo}
+        />
       )}
     </section>
+  );
+}
+
+function MonteCarloWorkspace(props: {
+  busy: boolean;
+  scenario: string;
+  scenarios: Scenario[];
+  selectedScenario?: Scenario;
+  steps: number;
+  seedStart: number;
+  seedCount: number;
+  result?: MonteCarloResult;
+  setScenario: (value: string) => void;
+  setSteps: (value: number) => void;
+  setSeedStart: (value: number) => void;
+  setSeedCount: (value: number) => void;
+  handleRun: () => void;
+}) {
+  return (
+    <>
+      <div className="counterGrid">
+        <section className="panel experimentControls">
+          <div className="panelHeader">
+            <span>monte carlo controls</span>
+            <SlidersHorizontal size={16} />
+          </div>
+          <ScenarioSelect scenarios={props.scenarios} scenario={props.scenario} setScenario={props.setScenario} busy={props.busy} />
+          <NumberControl label="Steps" value={props.steps} min={20} max={400} step={10} onChange={props.setSteps} />
+          <NumberControl label="Seed start" value={props.seedStart} min={1} max={10000} step={1} onChange={props.setSeedStart} />
+          <NumberControl label="Seed count" value={props.seedCount} min={3} max={100} step={1} onChange={props.setSeedCount} />
+          <p className="scenarioCopy">{props.selectedScenario?.description}</p>
+          <button className="primary" onClick={props.handleRun} disabled={props.busy}>
+            <FlaskConical size={16} />
+            Run Monte Carlo
+          </button>
+        </section>
+
+        <section className="panel chartPanel counterChartPanel">
+          <div className="panelHeader">
+            <span>confidence intervals</span>
+            <BarChart3 size={16} />
+          </div>
+          <MonteCarloIntervalChart result={props.result} />
+        </section>
+
+        <section className="panel conclusionPanel counterSummary">
+          <div className="panelHeader">
+            <span>research summary</span>
+            <strong>{props.result ? `${props.result.runs.length} seeds` : "idle"}</strong>
+          </div>
+          {props.result ? (
+            <>
+              <strong>{props.result.summary.interpretation}</strong>
+              <dl className="readoutGrid">
+                <Readout label="split probability" value={`${Math.round(props.result.summary.split_probability * 100)}%`} />
+                <Readout label="split risk mean" value={`${Math.round(props.result.summary.split_risk.mean * 100)}%`} />
+                <Readout label="escalation mean" value={`${Math.round(props.result.summary.escalation_risk.mean * 100)}%`} />
+                <Readout label="first split mean" value={props.result.summary.first_split_year_mean ?? "none"} />
+              </dl>
+            </>
+          ) : (
+            <p className="empty">Run multiple deterministic seeds to estimate stability ranges and confidence intervals.</p>
+          )}
+        </section>
+      </div>
+
+      <section className="panel resultsPanel">
+        <div className="panelHeader">
+          <span>seed outcomes</span>
+          <strong>{props.result?.scenario ?? "--"}</strong>
+        </div>
+        <MonteCarloTable result={props.result} />
+      </section>
+    </>
   );
 }
 
@@ -586,6 +691,32 @@ function BranchComparison({ result }: { result?: CounterfactualResult }) {
   );
 }
 
+function MonteCarloTable({ result }: { result?: MonteCarloResult }) {
+  if (!result) return <div className="chartEmpty">Run Monte Carlo to list seed outcomes.</div>;
+  return (
+    <div className="resultsTable">
+      <div className="tableHeader">
+        <span>seed</span>
+        <span>split risk</span>
+        <span>control</span>
+        <span>escalation</span>
+        <span>first split</span>
+        <span>max polities</span>
+      </div>
+      {result.runs.map((run) => (
+        <div className="tableRow" key={run.seed}>
+          <strong>{run.seed}</strong>
+          <span>{percent(run.final_metrics.split_risk)}</span>
+          <span>{percent(run.final_metrics.central_control)}</span>
+          <span>{percent(run.final_metrics.cold_war.escalation_risk)}</span>
+          <span>{run.year_of_first_split ?? "none"}</span>
+          <span>{run.max_polities}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Readout({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
@@ -629,6 +760,40 @@ function CounterfactualChart({ result, metric }: { result?: CounterfactualResult
   const original = result.original.timeline.map((item) => ({ x: item.year, y: metricValue(item, metric) }));
   const counter = result.counterfactual.timeline.map((item) => ({ x: item.year, y: metricValue(item, metric) }));
   return <MultiLineSvg original={original} counter={counter} metric={metric} />;
+}
+
+function MonteCarloIntervalChart({ result }: { result?: MonteCarloResult }) {
+  if (!result) return <div className="chartEmpty">Run Monte Carlo to draw confidence intervals.</div>;
+  const stats: Array<{ label: string; stats: MetricStats; percent: boolean }> = [
+    { label: "split", stats: result.summary.split_risk, percent: true },
+    { label: "control", stats: result.summary.central_control, percent: true },
+    { label: "escalation", stats: result.summary.escalation_risk, percent: true },
+    { label: "trade", stats: result.summary.trade_throughput, percent: false }
+  ];
+  const width = 720;
+  const height = 300;
+  const pad = 42;
+  const maxValue = Math.max(...stats.map((item) => item.stats.ci95_high), 0.1);
+  const mapX = (value: number) => pad + (value / maxValue) * (width - pad * 2);
+  const rowY = (index: number) => pad + index * 58;
+  return (
+    <svg className="experimentChart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="monte carlo confidence interval chart">
+      <path d={`M ${pad} ${height - pad} H ${width - pad}`} className="axisLine" />
+      {stats.map((item, index) => {
+        const y = rowY(index);
+        return (
+          <g key={item.label}>
+            <text x={pad} y={y - 12}>{item.label}</text>
+            <line x1={mapX(item.stats.ci95_low)} x2={mapX(item.stats.ci95_high)} y1={y} y2={y} className="intervalLine" />
+            <circle cx={mapX(item.stats.mean)} cy={y} r="7" className="chartPoint" />
+            <text x={mapX(item.stats.mean) + 12} y={y + 4}>
+              {item.percent ? percent(item.stats.mean) : item.stats.mean.toFixed(1)}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
 }
 
 function LineSvg({ points, formatY }: { points: Array<{ x: number; y: number }>; formatY: (value: number) => string }) {

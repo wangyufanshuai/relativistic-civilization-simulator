@@ -328,6 +328,44 @@ class ExperimentReportRequest(BaseModel):
     payload: dict[str, Any]
 
 
+class MonteCarloRequest(BaseModel):
+    scenario: str = "baseline_empire"
+    seeds: list[int] = Field(default_factory=lambda: list(range(20, 40)), min_length=3, max_length=100)
+    steps: int = Field(default=120, ge=1, le=1000)
+
+
+class MonteCarloSeedRun(BaseModel):
+    seed: int
+    final_metrics: RelativisticMetrics
+    year_of_first_split: int | None = None
+    max_polities: int
+
+
+class MetricStats(BaseModel):
+    mean: float
+    stddev: float
+    ci95_low: float
+    ci95_high: float
+
+
+class MonteCarloSummary(BaseModel):
+    split_risk: MetricStats
+    central_control: MetricStats
+    escalation_risk: MetricStats
+    trade_throughput: MetricStats
+    split_probability: float
+    first_split_year_mean: float | None = None
+    interpretation: str
+
+
+class MonteCarloResult(BaseModel):
+    scenario: str
+    steps: int
+    seeds: list[int]
+    runs: list[MonteCarloSeedRun]
+    summary: MonteCarloSummary
+
+
 class ArchivedRun(BaseModel):
     run_id: str
     scenario: str

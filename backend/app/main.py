@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from statistics import mean, stdev
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +20,11 @@ from app.models import (
     ExperimentReportRequest,
     ExperimentSummary,
     ForkSimulationRequest,
+    MetricStats,
+    MonteCarloRequest,
+    MonteCarloResult,
+    MonteCarloSeedRun,
+    MonteCarloSummary,
     RunSimulationRequest,
     SimulationConfig,
     StartSimulationRequest,
@@ -306,6 +312,32 @@ def report_experiment(request: ExperimentReportRequest) -> dict[str, str]:
     return {"markdown": markdown}
 
 
+@app.post("/api/experiments/monte-carlo")
+def monte_carlo(request: MonteCarloRequest) -> dict[str, object]:
+    runs: list[MonteCarloSeedRun] = []
+    for seed in request.seeds:
+        config = scenario_config(request.scenario, seed)
+        world = RelativisticCivilizationEngine(config).create_world()
+        RelativisticCivilizationEngine(config).run(world, request.steps)
+        timeline = world.metrics
+        runs.append(
+            MonteCarloSeedRun(
+                seed=seed,
+                final_metrics=timeline[-1],
+                year_of_first_split=next((metric.year for metric in timeline if metric.polities > 1), None),
+                max_polities=max(metric.polities for metric in timeline),
+            )
+        )
+    result = MonteCarloResult(
+        scenario=request.scenario,
+        steps=request.steps,
+        seeds=request.seeds,
+        runs=runs,
+        summary=_summarize_monte_carlo(runs),
+    )
+    return result.model_dump(mode="json")
+
+
 @app.post("/api/ai/chronicle")
 def ai_chronicle(payload: dict[str, str]) -> dict[str, object]:
     run_id = payload.get("run_id")
@@ -481,6 +513,42 @@ def _summarize_sweep(parameter: str, runs: list[ExperimentRun]) -> ExperimentSum
         highest_split_risk_value=risky.parameter_value,
         dominant_trend=trend,
         recommendation=recommendation,
+    )
+
+
+def _summarize_monte_carlo(runs: list[MonteCarloSeedRun]) -> MonteCarloSummary:
+    split_years = [run.year_of_first_split for run in runs if run.year_of_first_split is not None]
+    split_probability = len(split_years) / max(1, len(runs))
+    split_stats = _metric_stats([run.final_metrics.split_risk for run in runs])
+    control_stats = _metric_stats([run.final_metrics.central_control for run in runs])
+    escalation_stats = _metric_stats([run.final_metrics.cold_war.escalation_risk for run in runs])
+    trade_stats = _metric_stats([run.final_metrics.trade_throughput for run in runs])
+    if split_probability >= 0.5:
+        interpretation = "Across seeds, this scenario frequently produces political fragmentation under relativistic delay."
+    elif split_stats.mean >= 0.18:
+        interpretation = "Across seeds, split risk is persistent even when formal fragmentation remains uncommon."
+    else:
+        interpretation = "Across seeds, the empire remains comparatively stable under this configuration."
+    return MonteCarloSummary(
+        split_risk=split_stats,
+        central_control=control_stats,
+        escalation_risk=escalation_stats,
+        trade_throughput=trade_stats,
+        split_probability=round(split_probability, 4),
+        first_split_year_mean=round(mean(split_years), 3) if split_years else None,
+        interpretation=interpretation,
+    )
+
+
+def _metric_stats(values: list[float]) -> MetricStats:
+    avg = mean(values)
+    sigma = stdev(values) if len(values) > 1 else 0.0
+    margin = 1.96 * sigma / (len(values) ** 0.5) if values else 0.0
+    return MetricStats(
+        mean=round(avg, 4),
+        stddev=round(sigma, 4),
+        ci95_low=round(max(0.0, avg - margin), 4),
+        ci95_high=round(avg + margin, 4),
     )
 
 

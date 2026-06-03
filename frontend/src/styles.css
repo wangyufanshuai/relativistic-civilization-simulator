@@ -648,7 +648,7 @@ select {
 .modeSwitch button {
   border-color: transparent;
   background: transparent;
-  min-width: 128px;
+  min-width: 118px;
 }
 
 .modeSwitch button.active {
@@ -759,6 +759,12 @@ select {
 
 .scatterPoint {
   fill: var(--cyan);
+}
+
+.intervalLine {
+  stroke: rgba(34, 211, 238, 0.65);
+  stroke-width: 5;
+  stroke-linecap: round;
 }
 
 .chartEmpty {

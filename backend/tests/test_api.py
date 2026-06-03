@@ -301,3 +301,27 @@ def test_archive_pin_sort_and_delete() -> None:
     assert client.delete(f"/api/archive/runs/{second}").status_code == 200
     assert client.get(f"/api/archive/runs/{second}").status_code == 404
     assert client.get("/api/archive/runs/missing").status_code == 404
+
+
+def test_monte_carlo_returns_seed_runs_and_confidence_intervals() -> None:
+    payload = {"scenario": "baseline_empire", "seeds": [61, 62, 63, 64], "steps": 40}
+    body = client.post("/api/experiments/monte-carlo", json=payload).json()
+    assert body["scenario"] == "baseline_empire"
+    assert body["seeds"] == [61, 62, 63, 64]
+    assert len(body["runs"]) == 4
+    assert "final_metrics" in body["runs"][0]
+    assert {"mean", "stddev", "ci95_low", "ci95_high"} <= set(body["summary"]["split_risk"])
+    assert 0 <= body["summary"]["split_probability"] <= 1
+    assert body["summary"]["interpretation"]
+
+
+def test_monte_carlo_is_deterministic() -> None:
+    payload = {"scenario": "centralized_command", "seeds": [65, 66, 67, 68], "steps": 35}
+    first = client.post("/api/experiments/monte-carlo", json=payload).json()
+    second = client.post("/api/experiments/monte-carlo", json=payload).json()
+    assert first == second
+
+
+def test_monte_carlo_rejects_too_few_seeds() -> None:
+    response = client.post("/api/experiments/monte-carlo", json={"scenario": "baseline_empire", "seeds": [1, 2], "steps": 20})
+    assert response.status_code == 422

@@ -249,3 +249,35 @@ export interface ArchiveRunDetail {
   events: SimEvent[];
   snapshots: WorldSnapshot[];
 }
+
+export interface MetricStats {
+  mean: number;
+  stddev: number;
+  ci95_low: number;
+  ci95_high: number;
+}
+
+export interface MonteCarloSeedRun {
+  seed: number;
+  final_metrics: Metric;
+  year_of_first_split: number | null;
+  max_polities: number;
+}
+
+export interface MonteCarloSummary {
+  split_risk: MetricStats;
+  central_control: MetricStats;
+  escalation_risk: MetricStats;
+  trade_throughput: MetricStats;
+  split_probability: number;
+  first_split_year_mean: number | null;
+  interpretation: string;
+}
+
+export interface MonteCarloResult {
+  scenario: string;
+  steps: number;
+  seeds: number[];
+  runs: MonteCarloSeedRun[];
+  summary: MonteCarloSummary;
+}

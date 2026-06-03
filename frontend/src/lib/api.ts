@@ -3,6 +3,7 @@ import type {
   ArchiveRunDetail,
   CounterfactualOverrides,
   CounterfactualResult,
+  MonteCarloResult,
   Scenario,
   ScenarioCompareResult,
   SweepParameter,
@@ -136,4 +137,11 @@ export function pinArchivedRun(runId: string): Promise<ArchivedRun> {
 
 export function unpinArchivedRun(runId: string): Promise<ArchivedRun> {
   return request<ArchivedRun>(`/api/archive/runs/${runId}/unpin`, { method: "POST" });
+}
+
+export function runMonteCarlo(scenario: string, seeds: number[], steps: number): Promise<MonteCarloResult> {
+  return request<MonteCarloResult>("/api/experiments/monte-carlo", {
+    method: "POST",
+    body: JSON.stringify({ scenario, seeds, steps })
+  });
 }
