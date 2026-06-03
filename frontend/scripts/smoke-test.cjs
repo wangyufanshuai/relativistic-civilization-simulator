@@ -14,6 +14,22 @@ async function waitForApp(page) {
   throw new Error(`App did not become reachable at ${appUrl}`);
 }
 
+async function waitForApi(page) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    const health = await page.evaluate(async () => {
+      try {
+        const response = await fetch("/api/health");
+        return response.ok ? response.json() : { status: "bad", code: response.status };
+      } catch (error) {
+        return { status: "bad", error: error instanceof Error ? error.message : "unknown" };
+      }
+    });
+    if (health.status === "ok") return health;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new Error("API health did not become ready through the preview proxy");
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -24,11 +40,7 @@ async function main() {
   });
 
   await waitForApp(page);
-  const health = await page.evaluate(async () => {
-    const response = await fetch("/api/health");
-    return response.ok ? response.json() : { status: "bad", code: response.status };
-  });
-  if (health.status !== "ok") throw new Error(`API health failed: ${JSON.stringify(health)}`);
+  await waitForApi(page);
 
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("simulation online"), null, { timeout: 20000 });
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("3d relativistic star graph"), null, { timeout: 20000 });
