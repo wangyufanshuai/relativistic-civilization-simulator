@@ -95,6 +95,14 @@ The repository now includes browser-level release checks:
 - `npm run smoke` launches a Playwright Chromium smoke test against the built app.
 - GitHub Actions runs backend tests, frontend build, and an end-to-end browser smoke job that covers Simulation, Experiments, Archive, and `/api/health`.
 
+## v1.1 API Contract Discipline
+
+The backend OpenAPI contract is committed at `docs/openapi.json`:
+
+- `python scripts\export_openapi.py` regenerates the contract from the running FastAPI app definition.
+- `pytest` fails if the committed OpenAPI snapshot drifts from `app.openapi()`.
+- `docs/API_CONTRACT.md` defines the API contract workflow and public route scope.
+
 ## Run Backend
 
 ```powershell
@@ -146,6 +154,7 @@ Open the Vite URL, normally `http://localhost:5173`.
 
 ```powershell
 cd E:\xuexi\relativistic-civilization-simulator\backend
+python scripts\export_openapi.py
 pytest
 ```
 
