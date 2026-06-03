@@ -103,6 +103,15 @@ The backend OpenAPI contract is committed at `docs/openapi.json`:
 - `pytest` fails if the committed OpenAPI snapshot drifts from `app.openapi()`.
 - `docs/API_CONTRACT.md` defines the API contract workflow and public route scope.
 
+## v1.2 Frontend Maintainability Split
+
+The experiment bench is split into smaller React modules under `frontend/src/components/experiments/`:
+
+- `workspaces.tsx` owns the Sweep, Counterfactual, Monte Carlo, and Sensitivity panels.
+- `charts.tsx`, `tables.tsx`, and `controls.tsx` hold reusable presentation components.
+- `constants.ts` and `utils.ts` centralize metric labels, presets, formatting, and chart helpers.
+- `ExperimentsView.tsx` now focuses on state orchestration and API calls.
+
 ## Run Backend
 
 ```powershell
