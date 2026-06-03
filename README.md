@@ -129,6 +129,23 @@ Every archived or active run can now export a reproducibility manifest:
 - Archive run actions include a direct Manifest JSON download link.
 - Browser smoke checks verify the manifest action is visible through the built preview.
 
+## v1.5 DeepSeek Chronicle Adapter
+
+The simulator is deterministic without an AI provider. The optional chronicle endpoint can call DeepSeek or another OpenAI-compatible API:
+
+```powershell
+$env:DEEPSEEK_API_KEY="your-key"
+$env:DEEPSEEK_MODEL="deepseek-chat"
+```
+
+Optional overrides:
+
+- `DEEPSEEK_BASE_URL`, default `https://api.deepseek.com`
+- `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL` for OpenAI-compatible fallback
+- `AI_CHRONICLE_TIMEOUT_SECONDS`, default `20`
+
+AI output is used only for narrative summaries. It never participates in simulation state transitions, metrics, experiments, or reports.
+
 ## Run Backend
 
 ```powershell

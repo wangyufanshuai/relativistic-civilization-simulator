@@ -55,7 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SERVICE_VERSION = "1.4.0"
+SERVICE_VERSION = "1.5.0"
 CAPABILITIES = [
     "timeline_replay",
     "risk_breakdown",
@@ -67,6 +67,7 @@ CAPABILITIES = [
     "openapi_contract",
     "browser_smoke_ci",
     "run_manifests",
+    "deepseek_chronicle",
 ]
 
 

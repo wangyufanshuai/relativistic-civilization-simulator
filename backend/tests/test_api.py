@@ -7,7 +7,9 @@ from app.store import SimulationStore
 client = TestClient(app)
 
 
-def test_api_simulation_flow_and_exports() -> None:
+def test_api_simulation_flow_and_exports(monkeypatch) -> None:
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     assert client.get("/api/health").json()["status"] == "ok"
     diagnostics = client.get("/api/diagnostics").json()
     assert diagnostics["status"] == "ok"
@@ -44,7 +46,7 @@ def test_api_simulation_flow_and_exports() -> None:
     assert manifest["diagnostics"]["version"]
     assert manifest["final_metrics"]["year"] == stepped["latest"]["year"]
     assert manifest["reproducibility"]["openapi_contract"] == "docs/openapi.json"
-    assert client.post("/api/ai/chronicle", json={"run_id": run_id}).json()["provider"] in {"offline", "configured"}
+    assert client.post("/api/ai/chronicle", json={"run_id": run_id}).json()["provider"] == "offline"
 
 
 def test_api_invalid_run_id_returns_404() -> None:
