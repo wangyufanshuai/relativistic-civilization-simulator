@@ -15,6 +15,7 @@ from app.models import (
     CounterfactualBranch,
     CounterfactualRequest,
     CounterfactualResult,
+    CredibilityAuditRequest,
     Diagnostics,
     Event,
     EventType,
@@ -41,6 +42,7 @@ from app.models import (
     WorldSnapshot,
     WorldState,
 )
+from app.research import ASSUMPTIONS, ASSUMPTIONS_VERSION, assumption_ids, credibility_audit
 from app.report import experiment_report, markdown_report, world_for_ai
 from app.scenarios import SCENARIOS, scenario_config
 from app.store import store
@@ -55,7 +57,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SERVICE_VERSION = "1.5.0"
+SERVICE_VERSION = "1.6.0"
 CAPABILITIES = [
     "timeline_replay",
     "risk_breakdown",
@@ -68,6 +70,7 @@ CAPABILITIES = [
     "browser_smoke_ci",
     "run_manifests",
     "deepseek_chronicle",
+    "research_credibility_audit",
 ]
 
 
@@ -96,6 +99,30 @@ def _diagnostics() -> Diagnostics:
 @app.get("/api/scenarios")
 def scenarios() -> list[dict[str, object]]:
     return [scenario.model_dump() for scenario in SCENARIOS]
+
+
+@app.get("/api/research/assumptions")
+def research_assumptions() -> list[dict[str, object]]:
+    return [assumption.model_dump(mode="json") for assumption in ASSUMPTIONS]
+
+
+@app.post("/api/research/audit")
+def research_audit(request: CredibilityAuditRequest) -> dict[str, object]:
+    if request.kind == "run":
+        if not request.run_id:
+            raise HTTPException(status_code=422, detail="run_id is required for run audit")
+        try:
+            world = store.get(request.run_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="simulation not found") from exc
+        payload = {
+            "scenario": world.config.scenario,
+            "timeline": [metric.model_dump(mode="json") for metric in world.metrics],
+            "final_metrics": world.metrics[-1].model_dump(mode="json"),
+            "events": [event.model_dump(mode="json") for event in world.events[-30:]],
+        }
+        return credibility_audit("run", payload).model_dump(mode="json")
+    return credibility_audit(request.kind, request.payload or {}).model_dump(mode="json")
 
 
 @app.post("/api/simulations/start")
@@ -783,6 +810,8 @@ def manifest_for_world(world: WorldState) -> RunManifest:
         event_count=len(world.events),
         snapshot_count=snapshot_count,
         report_available=report_available,
+        assumptions_version=ASSUMPTIONS_VERSION,
+        assumption_ids=assumption_ids(),
         reproducibility={
             "engine": "RelativisticCivilizationEngine",
             "time_unit": "year",

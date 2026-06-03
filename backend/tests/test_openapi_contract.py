@@ -18,6 +18,8 @@ def test_openapi_contract_includes_public_routes() -> None:
         "/api/health",
         "/api/diagnostics",
         "/api/scenarios",
+        "/api/research/assumptions",
+        "/api/research/audit",
         "/api/simulations/start",
         "/api/simulations/step",
         "/api/simulations/run",

@@ -864,6 +864,12 @@ select {
   grid-template-columns: 1fr 1fr 0.9fr 0.9fr 0.8fr 2.8fr;
 }
 
+.credibilityHeader,
+.credibilityRow {
+  min-width: 760px;
+  grid-template-columns: 1.1fr 0.7fr 2.8fr;
+}
+
 .tableHeader {
   color: var(--muted);
   font-size: 12px;
@@ -906,6 +912,31 @@ select {
   width: 30px;
   height: 30px;
   padding: 0;
+}
+
+.credibilityLists {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.credibilityLists div {
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.credibilityLists strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.credibilityLists p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .scenarioCompareGrid {
@@ -959,7 +990,7 @@ select {
 
 .archiveActions {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
@@ -1062,6 +1093,7 @@ select {
   .experimentGrid,
   .counterGrid,
   .archiveGrid,
+  .credibilityLists,
   .scenarioCompareGrid,
   .eventList {
     grid-template-columns: 1fr;

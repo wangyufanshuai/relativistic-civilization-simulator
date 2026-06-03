@@ -1,11 +1,25 @@
 import React from "react";
-import { compareScenarios, experimentReport, runCounterfactual, runMonteCarlo, runSensitivity, runSimulation, runSweep, sensitivityReport } from "../lib/api";
+import {
+  compareScenarios,
+  experimentReport,
+  listAssumptions,
+  runCounterfactual,
+  runCredibilityAudit,
+  runMonteCarlo,
+  runSensitivity,
+  runSimulation,
+  runSweep,
+  sensitivityReport
+} from "../lib/api";
 import { experimentPresets, parameterDefaults } from "./experiments/constants";
-import { CounterfactualWorkspace, MonteCarloWorkspace, SensitivityWorkspace, SweepWorkspace } from "./experiments/workspaces";
+import { CounterfactualWorkspace, CredibilityWorkspace, MonteCarloWorkspace, SensitivityWorkspace, SweepWorkspace } from "./experiments/workspaces";
 import type {
+  Assumption,
+  CredibilityAudit,
   CounterfactualResult,
   ExperimentMetricKey,
   MonteCarloResult,
+  ResearchAuditKind,
   Scenario,
   ScenarioCompareResult,
   SensitivityResult,
@@ -21,7 +35,7 @@ interface ExperimentsViewProps {
 }
 
 export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: ExperimentsViewProps) {
-  const [mode, setMode] = React.useState<"sweep" | "counterfactual" | "monteCarlo" | "sensitivity">("sweep");
+  const [mode, setMode] = React.useState<"sweep" | "counterfactual" | "monteCarlo" | "sensitivity" | "credibility">("sweep");
   const [scenario, setScenario] = React.useState("baseline_empire");
   const [parameter, setParameter] = React.useState<SweepParameter>("centralization");
   const [metric, setMetric] = React.useState<ExperimentMetricKey>("split_risk");
@@ -45,6 +59,9 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
   const [sensitivitySeedCount, setSensitivitySeedCount] = React.useState(8);
   const [perturbation, setPerturbation] = React.useState(0.22);
   const [sensitivityReportText, setSensitivityReportText] = React.useState("");
+  const [assumptions, setAssumptions] = React.useState<Assumption[]>([]);
+  const [auditKind, setAuditKind] = React.useState<ResearchAuditKind>("run");
+  const [credibilityAudit, setCredibilityAudit] = React.useState<CredibilityAudit>();
 
   React.useEffect(() => {
     void handleInitialLoad();
@@ -67,8 +84,12 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
     setBusy(true);
     try {
       setStatus("preparing experiment bench");
-      const initialSweep = await runSweep("baseline_empire", "centralization", parameterDefaults.centralization, 140, 42);
+      const [initialSweep, loadedAssumptions] = await Promise.all([
+        runSweep("baseline_empire", "centralization", parameterDefaults.centralization, 140, 42),
+        listAssumptions()
+      ]);
       setSweep(initialSweep);
+      setAssumptions(loadedAssumptions);
       setStatus("comparing scenarios");
       const initialComparison = await compareScenarios(100, 42);
       setComparison(initialComparison);
@@ -135,6 +156,32 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
     setSensitivityReportText(result.markdown);
   }
 
+  async function handleCredibilityAudit() {
+    const audit = await runExperimentTask("running credibility audit", async () => {
+      if (auditKind === "run") {
+        const world = await runSimulation(scenario, 80, 42);
+        return runCredibilityAudit("run", undefined, world.run_id);
+      }
+      const payload = {
+        sweep,
+        counterfactual,
+        monte_carlo: monteCarlo,
+        sensitivity
+      }[auditKind];
+      if (!payload) {
+        throw new Error(`No ${auditKind} result is available for credibility audit.`);
+      }
+      return runCredibilityAudit(auditKind, payload);
+    });
+    setCredibilityAudit(audit);
+  }
+
+  function useForAudit(kind: ResearchAuditKind) {
+    setAuditKind(kind);
+    setCredibilityAudit(undefined);
+    setMode("credibility");
+  }
+
   function handleParameterChange(next: SweepParameter) {
     setParameter(next);
     setSweepValues(parameterDefaults[next]);
@@ -181,6 +228,9 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
           </button>
           <button className={mode === "sensitivity" ? "active" : ""} onClick={() => setMode("sensitivity")}>
             Sensitivity
+          </button>
+          <button className={mode === "credibility" ? "active" : ""} onClick={() => setMode("credibility")}>
+            Credibility
           </button>
         </div>
       </div>
@@ -243,8 +293,9 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
           setSeedStart={setSeedStart}
           setSeedCount={setSeedCount}
           handleRun={handleMonteCarlo}
+          useForAudit={() => useForAudit("monte_carlo")}
         />
-      ) : (
+      ) : mode === "sensitivity" ? (
         <SensitivityWorkspace
           busy={busy}
           scenario={scenario}
@@ -263,6 +314,20 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
           setPerturbation={setPerturbation}
           handleRun={handleSensitivity}
           handleReport={handleSensitivityReport}
+          useForAudit={() => useForAudit("sensitivity")}
+        />
+      ) : (
+        <CredibilityWorkspace
+          busy={busy}
+          scenario={scenario}
+          scenarios={scenarios}
+          selectedScenario={selectedScenario}
+          assumptions={assumptions}
+          auditKind={auditKind}
+          audit={credibilityAudit}
+          setScenario={setScenario}
+          setAuditKind={setAuditKind}
+          handleAudit={handleCredibilityAudit}
         />
       )}
     </section>

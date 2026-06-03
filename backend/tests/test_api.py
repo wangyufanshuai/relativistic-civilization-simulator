@@ -45,6 +45,8 @@ def test_api_simulation_flow_and_exports(monkeypatch) -> None:
     assert manifest["seed"] == 11
     assert manifest["diagnostics"]["version"]
     assert manifest["final_metrics"]["year"] == stepped["latest"]["year"]
+    assert manifest["assumptions_version"] == "1.0"
+    assert "light_speed_delay" in manifest["assumption_ids"]
     assert manifest["reproducibility"]["openapi_contract"] == "docs/openapi.json"
     assert client.post("/api/ai/chronicle", json={"run_id": run_id}).json()["provider"] == "offline"
 
@@ -293,6 +295,7 @@ def test_archive_persists_run_snapshots_and_report() -> None:
     report = client.get(f"/api/archive/runs/{run_id}/report.md")
     assert report.status_code == 200
     assert report.text.startswith("# Relativistic Civilization Report")
+    assert "Assumptions & Credibility" in report.text
     manifest = client.get(f"/api/archive/runs/{run_id}/manifest.json")
     assert manifest.status_code == 200
     assert manifest.json()["run_id"] == run_id
@@ -383,3 +386,49 @@ def test_sensitivity_is_deterministic_and_rejects_invalid_parameter() -> None:
         json={"scenario": "baseline_empire", "parameters": ["resources"], "steps": 20, "seed_count": 3},
     )
     assert invalid.status_code == 422
+
+
+def test_research_assumptions_are_stable() -> None:
+    body = client.get("/api/research/assumptions").json()
+    ids = [item["id"] for item in body]
+    assert ids == [
+        "light_speed_delay",
+        "centralization_pressure",
+        "autonomy_loyalty_dynamics",
+        "cold_war_deterrence",
+        "black_hole_approximation",
+        "ai_narrative_only",
+    ]
+    assert {"title", "description", "applies_to", "related_metrics", "limitations"} <= set(body[0])
+
+
+def test_research_audit_for_run_and_missing_run() -> None:
+    world = client.post("/api/simulations/run", json={"scenario": "baseline_empire", "seed": 91, "steps": 20}).json()
+    audit = client.post("/api/research/audit", json={"kind": "run", "run_id": world["run_id"]}).json()
+    assert audit["kind"] == "run"
+    assert audit["evidence_level"] in {"exploratory", "moderate", "strong_internal"}
+    assert 0 <= audit["robustness_score"] <= 1
+    assert len(audit["assumption_coverage"]) >= 6
+    assert audit["primary_limitations"]
+    assert audit["recommended_followups"]
+    assert "model-internal" in audit["citation_summary"]
+    assert client.post("/api/research/audit", json={"kind": "run", "run_id": "missing"}).status_code == 404
+    assert client.post("/api/research/audit", json={"kind": "run"}).status_code == 422
+
+
+def test_research_audit_scores_multi_seed_evidence_above_single_run() -> None:
+    run = client.post("/api/simulations/run", json={"scenario": "baseline_empire", "seed": 92, "steps": 20}).json()
+    run_audit = client.post("/api/research/audit", json={"kind": "run", "run_id": run["run_id"]}).json()
+    monte = client.post(
+        "/api/experiments/monte-carlo",
+        json={"scenario": "baseline_empire", "seeds": [93, 94, 95, 96, 97, 98, 99, 100], "steps": 20},
+    ).json()
+    sensitivity = client.post(
+        "/api/experiments/sensitivity",
+        json={"scenario": "baseline_empire", "parameters": ["centralization", "federation_bias"], "steps": 20, "seed_start": 101, "seed_count": 4},
+    ).json()
+    monte_audit = client.post("/api/research/audit", json={"kind": "monte_carlo", "payload": monte}).json()
+    sensitivity_audit = client.post("/api/research/audit", json={"kind": "sensitivity", "payload": sensitivity}).json()
+    assert monte_audit["robustness_score"] > run_audit["robustness_score"]
+    assert sensitivity_audit["robustness_score"] > run_audit["robustness_score"]
+    assert monte_audit["evidence_level"] in {"moderate", "strong_internal"}

@@ -1,6 +1,8 @@
 import type {
   ArchivedRun,
   ArchiveRunDetail,
+  Assumption,
+  CredibilityAudit,
   CounterfactualOverrides,
   CounterfactualResult,
   Diagnostics,
@@ -9,6 +11,7 @@ import type {
   ScenarioCompareResult,
   SensitivityResult,
   SweepParameter,
+  ResearchAuditKind,
   SweepResult,
   WorldSnapshot,
   WorldState
@@ -39,6 +42,17 @@ export function listScenarios(): Promise<Scenario[]> {
 
 export function diagnostics(): Promise<Diagnostics> {
   return request<Diagnostics>("/api/diagnostics");
+}
+
+export function listAssumptions(): Promise<Assumption[]> {
+  return request<Assumption[]>("/api/research/assumptions");
+}
+
+export function runCredibilityAudit(kind: ResearchAuditKind, payload?: object, runId?: string): Promise<CredibilityAudit> {
+  return request<CredibilityAudit>("/api/research/audit", {
+    method: "POST",
+    body: JSON.stringify({ kind, payload, run_id: runId })
+  });
 }
 
 export function startSimulation(scenario: string, seed = 42): Promise<WorldState> {

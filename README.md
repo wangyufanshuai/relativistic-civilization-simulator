@@ -146,6 +146,16 @@ Optional overrides:
 
 AI output is used only for narrative summaries. It never participates in simulation state transitions, metrics, experiments, or reports.
 
+## v1.6 Research Credibility Audit Lab
+
+The experiment bench now includes a rule-based credibility layer:
+
+- `GET /api/research/assumptions` returns the static model assumption catalog.
+- `POST /api/research/audit` scores run and experiment evidence as exploratory, moderate, or strong internal evidence.
+- Reports include an `Assumptions & Credibility` section with limitations and recommended follow-up experiments.
+- Run manifests include assumption metadata for reproducible research packages.
+- The Experiments workspace has a `Credibility` mode, and Archive details show evidence level and robustness.
+
 ## Run Backend
 
 ```powershell
@@ -169,6 +179,8 @@ Open the Vite URL, normally `http://localhost:5173`.
 - `GET /api/health`
 - `GET /api/diagnostics`
 - `GET /api/scenarios`
+- `GET /api/research/assumptions`
+- `POST /api/research/audit`
 - `POST /api/simulations/start`
 - `POST /api/simulations/step`
 - `POST /api/simulations/run`

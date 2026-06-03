@@ -89,6 +89,49 @@
         "title": "CounterfactualRequest",
         "type": "object"
       },
+      "CredibilityAuditRequest": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "run",
+              "sweep",
+              "counterfactual",
+              "monte_carlo",
+              "sensitivity"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "CredibilityAuditRequest",
+        "type": "object"
+      },
       "ExperimentReportRequest": {
         "properties": {
           "kind": {
@@ -1180,6 +1223,69 @@
           }
         },
         "summary": "Report"
+      }
+    },
+    "/api/research/assumptions": {
+      "get": {
+        "operationId": "research_assumptions_api_research_assumptions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Research Assumptions Api Research Assumptions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Research Assumptions"
+      }
+    },
+    "/api/research/audit": {
+      "post": {
+        "operationId": "research_audit_api_research_audit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredibilityAuditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Research Audit Api Research Audit Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Research Audit"
       }
     },
     "/api/scenarios": {

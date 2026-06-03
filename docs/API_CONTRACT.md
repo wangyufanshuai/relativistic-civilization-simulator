@@ -17,4 +17,5 @@ Contract scope:
 - Archive lifecycle: `/api/archive/*`
 - Experiment lab: `/api/experiments/*`
 - Reports and exports: `/api/report/{run_id}.md`, `/api/exports/{run_id}.csv`
+- Research credibility: `/api/research/*`
 - Optional chronicle layer: `/api/ai/chronicle`

@@ -49,6 +49,11 @@ async function main() {
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("experiment bench ready"), null, { timeout: 30000 });
   await page.getByRole("button", { name: "Sensitivity" }).click();
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("sensitivity controls"), null, { timeout: 10000 });
+  await page.getByRole("button", { name: "Credibility", exact: true }).click();
+  await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("credibility controls"), null, { timeout: 10000 });
+  await page.getByRole("button", { name: "Run credibility audit" }).click();
+  await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("assumption coverage"), null, { timeout: 20000 });
+  await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("evidence level"), null, { timeout: 20000 });
 
   await page.getByLabel("archive").click();
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("persistent research archive"), null, { timeout: 10000 });

@@ -229,6 +229,8 @@ class RunSimulationRequest(BaseModel):
 
 SweepParameter = Literal["centralization", "ship_velocity_c", "expansion_pressure", "federation_bias"]
 ExperimentReportKind = Literal["counterfactual", "sweep", "sensitivity"]
+ResearchAuditKind = Literal["run", "sweep", "counterfactual", "monte_carlo", "sensitivity"]
+EvidenceLevel = Literal["exploratory", "moderate", "strong_internal"]
 
 
 class SweepRequest(BaseModel):
@@ -449,6 +451,38 @@ class Diagnostics(BaseModel):
     capabilities: list[str]
 
 
+class Assumption(BaseModel):
+    id: str
+    title: str
+    description: str
+    applies_to: list[str]
+    related_metrics: list[str]
+    limitations: list[str]
+
+
+class AssumptionCoverage(BaseModel):
+    assumption_id: str
+    title: str
+    status: Literal["covered", "partial", "weak"]
+    rationale: str
+
+
+class CredibilityAuditRequest(BaseModel):
+    kind: ResearchAuditKind
+    run_id: str | None = None
+    payload: dict[str, Any] | None = None
+
+
+class CredibilityAudit(BaseModel):
+    kind: ResearchAuditKind
+    evidence_level: EvidenceLevel
+    robustness_score: float
+    assumption_coverage: list[AssumptionCoverage]
+    primary_limitations: list[str]
+    recommended_followups: list[str]
+    citation_summary: str
+
+
 class RunManifest(BaseModel):
     manifest_version: str = "1.0"
     generated_at: str
@@ -463,4 +497,6 @@ class RunManifest(BaseModel):
     event_count: int
     snapshot_count: int
     report_available: bool
+    assumptions_version: str = "1.0"
+    assumption_ids: list[str] = Field(default_factory=list)
     reproducibility: dict[str, object]

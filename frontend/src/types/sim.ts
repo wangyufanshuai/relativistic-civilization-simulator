@@ -267,6 +267,35 @@ export interface Diagnostics {
   capabilities: string[];
 }
 
+export type ResearchAuditKind = "run" | "sweep" | "counterfactual" | "monte_carlo" | "sensitivity";
+export type EvidenceLevel = "exploratory" | "moderate" | "strong_internal";
+
+export interface Assumption {
+  id: string;
+  title: string;
+  description: string;
+  applies_to: string[];
+  related_metrics: string[];
+  limitations: string[];
+}
+
+export interface AssumptionCoverage {
+  assumption_id: string;
+  title: string;
+  status: "covered" | "partial" | "weak";
+  rationale: string;
+}
+
+export interface CredibilityAudit {
+  kind: ResearchAuditKind;
+  evidence_level: EvidenceLevel;
+  robustness_score: number;
+  assumption_coverage: AssumptionCoverage[];
+  primary_limitations: string[];
+  recommended_followups: string[];
+  citation_summary: string;
+}
+
 export interface MetricStats {
   mean: number;
   stddev: number;

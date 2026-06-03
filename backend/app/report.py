@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.models import WorldState
+from app.research import audit_for_world, audit_markdown, credibility_audit
 
 
 def markdown_report(world: WorldState) -> str:
@@ -38,6 +39,7 @@ def markdown_report(world: WorldState) -> str:
     )
     for event in world.events[-20:]:
         lines.append(f"- **{event.year}** {event.title}: {event.description}")
+    lines.extend(["", audit_markdown(audit_for_world(world))])
     return "\n".join(lines) + "\n"
 
 
@@ -84,6 +86,7 @@ def experiment_report(kind: str, payload: dict[str, Any]) -> str:
             "- Forks are in-memory only and depend on available snapshots.",
             "- The model uses strategic SR and approximate GR effects rather than full physical simulation.",
         ]
+        lines.extend(["", audit_markdown(credibility_audit("counterfactual", payload))])
         return "\n".join(lines) + "\n"
 
     if kind == "sweep":
@@ -119,6 +122,7 @@ def experiment_report(kind: str, payload: dict[str, Any]) -> str:
                 "- Parameter values outside the allowed model ranges are intentionally excluded.",
             ]
         )
+        lines.extend(["", audit_markdown(credibility_audit("sweep", payload))])
         return "\n".join(lines) + "\n"
 
     if kind == "sensitivity":
@@ -153,6 +157,7 @@ def experiment_report(kind: str, payload: dict[str, Any]) -> str:
                 "- Parameters can interact nonlinearly; follow up strong effects with counterfactual and Monte Carlo runs.",
             ]
         )
+        lines.extend(["", audit_markdown(credibility_audit("sensitivity", payload))])
         return "\n".join(lines) + "\n"
 
     return "# Experiment Report\n\nUnsupported report kind.\n"

@@ -1,5 +1,17 @@
-import { BarChart3, FileText, FlaskConical, GitCompareArrows, LineChart, SlidersHorizontal } from "lucide-react";
-import type { CounterfactualResult, ExperimentMetricKey, MonteCarloResult, Scenario, ScenarioCompareResult, SensitivityResult, SweepParameter, SweepResult } from "../../types/sim";
+import { BarChart3, FileText, FlaskConical, GitCompareArrows, LineChart, Microscope, SlidersHorizontal } from "lucide-react";
+import type {
+  Assumption,
+  CredibilityAudit,
+  CounterfactualResult,
+  ExperimentMetricKey,
+  MonteCarloResult,
+  ResearchAuditKind,
+  Scenario,
+  ScenarioCompareResult,
+  SensitivityResult,
+  SweepParameter,
+  SweepResult
+} from "../../types/sim";
 import { experimentPresets, metricLabels, parameterDefaults } from "./constants";
 import { CounterfactualChart, MonteCarloIntervalChart, ScatterChart, SensitivityBarChart, SweepChart } from "./charts";
 import { MarkdownReport, MetricSelect, NumberControl, PeakBreakdown, Readout, ScenarioSelect } from "./controls";
@@ -20,6 +32,7 @@ export function MonteCarloWorkspace(props: {
   setSeedStart: (value: number) => void;
   setSeedCount: (value: number) => void;
   handleRun: () => void;
+  useForAudit: () => void;
 }) {
   return (
     <>
@@ -37,6 +50,10 @@ export function MonteCarloWorkspace(props: {
           <button className="primary" onClick={props.handleRun} disabled={props.busy}>
             <FlaskConical size={16} />
             Run Monte Carlo
+          </button>
+          <button onClick={props.useForAudit} disabled={props.busy || !props.result}>
+            <Microscope size={16} />
+            Use for credibility audit
           </button>
         </section>
 
@@ -98,6 +115,7 @@ export function SensitivityWorkspace(props: {
   setPerturbation: (value: number) => void;
   handleRun: () => void;
   handleReport: () => void;
+  useForAudit: () => void;
 }) {
   return (
     <>
@@ -120,6 +138,10 @@ export function SensitivityWorkspace(props: {
           <button onClick={props.handleReport} disabled={props.busy || !props.result}>
             <FileText size={16} />
             Generate sensitivity report
+          </button>
+          <button onClick={props.useForAudit} disabled={props.busy || !props.result}>
+            <Microscope size={16} />
+            Use for credibility audit
           </button>
         </section>
 
@@ -162,6 +184,124 @@ export function SensitivityWorkspace(props: {
       </section>
 
       {props.reportText && <MarkdownReport markdown={props.reportText} filename="sensitivity-report.md" />}
+    </>
+  );
+}
+
+export function CredibilityWorkspace(props: {
+  busy: boolean;
+  scenario: string;
+  scenarios: Scenario[];
+  selectedScenario?: Scenario;
+  assumptions: Assumption[];
+  auditKind: ResearchAuditKind;
+  audit?: CredibilityAudit;
+  setScenario: (value: string) => void;
+  setAuditKind: (value: ResearchAuditKind) => void;
+  handleAudit: () => void;
+}) {
+  return (
+    <>
+      <div className="counterGrid">
+        <section className="panel experimentControls">
+          <div className="panelHeader">
+            <span>credibility controls</span>
+            <SlidersHorizontal size={16} />
+          </div>
+          <ScenarioSelect scenarios={props.scenarios} scenario={props.scenario} setScenario={props.setScenario} busy={props.busy} />
+          <label>
+            Evidence source
+            <select value={props.auditKind} onChange={(event) => props.setAuditKind(event.target.value as ResearchAuditKind)} disabled={props.busy}>
+              <option value="run">single run</option>
+              <option value="sweep">latest sweep</option>
+              <option value="counterfactual">latest counterfactual</option>
+              <option value="monte_carlo">latest monte carlo</option>
+              <option value="sensitivity">latest sensitivity</option>
+            </select>
+          </label>
+          <p className="scenarioCopy">{props.selectedScenario?.description}</p>
+          <button className="primary" onClick={props.handleAudit} disabled={props.busy}>
+            <Microscope size={16} />
+            Run credibility audit
+          </button>
+        </section>
+
+        <section className="panel conclusionPanel counterSummary">
+          <div className="panelHeader">
+            <span>credibility audit</span>
+            <strong>{props.audit?.evidence_level ?? "idle"}</strong>
+          </div>
+          {props.audit ? (
+            <>
+              <strong>{props.audit.citation_summary}</strong>
+              <dl className="readoutGrid">
+                <Readout label="evidence level" value={props.audit.evidence_level} />
+                <Readout label="robustness" value={`${Math.round(props.audit.robustness_score * 100)}%`} />
+                <Readout label="assumptions" value={props.audit.assumption_coverage.length} />
+                <Readout label="limitations" value={props.audit.primary_limitations.length} />
+              </dl>
+            </>
+          ) : (
+            <p className="empty">Generate an audit to separate exploratory narrative from model-internal evidence.</p>
+          )}
+        </section>
+      </div>
+
+      <section className="panel resultsPanel">
+        <div className="panelHeader">
+          <span>assumption coverage</span>
+          <strong>{props.assumptions.length || "--"} assumptions</strong>
+        </div>
+        {props.audit ? (
+          <div className="resultsTable">
+            <div className="tableHeader credibilityHeader">
+              <span>assumption</span>
+              <span>status</span>
+              <span>rationale</span>
+            </div>
+            {props.audit.assumption_coverage.map((item) => (
+              <div className="tableRow credibilityRow" key={item.assumption_id}>
+                <strong>{item.title}</strong>
+                <span>{item.status}</span>
+                <span>{item.rationale}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="resultsTable">
+            {props.assumptions.map((item) => (
+              <div className="tableRow credibilityRow" key={item.id}>
+                <strong>{item.title}</strong>
+                <span>{item.applies_to.join(", ")}</span>
+                <span>{item.limitations[0]}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {props.audit && (
+        <section className="panel conclusionPanel">
+          <div className="panelHeader">
+            <span>limitations and followups</span>
+            <FileText size={16} />
+          </div>
+          <div className="credibilityLists">
+            <div>
+              <strong>Primary limitations</strong>
+              {props.audit.primary_limitations.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
+            </div>
+            <div>
+              <strong>Recommended followups</strong>
+              {props.audit.recommended_followups.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

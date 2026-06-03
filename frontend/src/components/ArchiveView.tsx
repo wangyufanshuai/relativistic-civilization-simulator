@@ -1,7 +1,7 @@
 import React from "react";
 import { Download, Eye, FolderArchive, Pin, PinOff, Play, RefreshCw, Trash2 } from "lucide-react";
-import { deleteArchivedRun, getArchivedReport, getArchivedRun, listArchivedRuns, pinArchivedRun, unpinArchivedRun } from "../lib/api";
-import type { ArchivedRun, WorldState } from "../types/sim";
+import { deleteArchivedRun, getArchivedReport, getArchivedRun, listArchivedRuns, pinArchivedRun, runCredibilityAudit, unpinArchivedRun } from "../lib/api";
+import type { ArchivedRun, CredibilityAudit, WorldState } from "../types/sim";
 
 interface ArchiveViewProps {
   busy: boolean;
@@ -14,11 +14,30 @@ export function ArchiveView({ busy, setBusy, setStatus, onLoadRun }: ArchiveView
   const [runs, setRuns] = React.useState<ArchivedRun[]>([]);
   const [selected, setSelected] = React.useState<ArchivedRun>();
   const [report, setReport] = React.useState("");
+  const [audit, setAudit] = React.useState<CredibilityAudit>();
 
   React.useEffect(() => {
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  React.useEffect(() => {
+    if (!selected) {
+      setAudit(undefined);
+      return;
+    }
+    let cancelled = false;
+    runCredibilityAudit("run", undefined, selected.run_id)
+      .then((result) => {
+        if (!cancelled) setAudit(result);
+      })
+      .catch(() => {
+        if (!cancelled) setAudit(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
 
   async function task<T>(status: string, work: () => Promise<T>): Promise<T> {
     setBusy(true);
@@ -111,6 +130,8 @@ export function ArchiveView({ busy, setBusy, setStatus, onLoadRun }: ArchiveView
                 <Readout label="snapshots" value={selected.snapshot_count} />
                 <Readout label="split risk" value={`${Math.round(selected.final_metrics.split_risk * 100)}%`} />
                 <Readout label="escalation" value={`${Math.round(selected.final_metrics.cold_war.escalation_risk * 100)}%`} />
+                <Readout label="evidence" value={audit?.evidence_level ?? "--"} />
+                <Readout label="robustness" value={audit ? `${Math.round(audit.robustness_score * 100)}%` : "--"} />
               </dl>
               <div className="archiveActions">
                 <button className="primary" onClick={() => loadRun(selected.run_id)} disabled={busy}>
