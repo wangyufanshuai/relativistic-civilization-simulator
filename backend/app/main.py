@@ -26,6 +26,10 @@ from app.models import (
     MonteCarloSeedRun,
     MonteCarloSummary,
     RunSimulationRequest,
+    SensitivityParameterResult,
+    SensitivityRequest,
+    SensitivityResult,
+    SensitivitySummary,
     SimulationConfig,
     StartSimulationRequest,
     StepSimulationRequest,
@@ -338,6 +342,59 @@ def monte_carlo(request: MonteCarloRequest) -> dict[str, object]:
     return result.model_dump(mode="json")
 
 
+@app.post("/api/experiments/sensitivity")
+def sensitivity(request: SensitivityRequest) -> dict[str, object]:
+    seeds = [request.seed_start + index for index in range(request.seed_count)]
+    baseline_config = scenario_config(request.scenario, seeds[0])
+    results: list[SensitivityParameterResult] = []
+    for parameter in request.parameters:
+        baseline_value = float(getattr(baseline_config, parameter))
+        low_value, high_value = _sensitivity_bounds(parameter, baseline_value, request.perturbation)
+        low_metrics = [_final_metric_for(request.scenario, seed, request.steps, {parameter: low_value}) for seed in seeds]
+        base_metrics = [_final_metric_for(request.scenario, seed, request.steps, {}) for seed in seeds]
+        high_metrics = [_final_metric_for(request.scenario, seed, request.steps, {parameter: high_value}) for seed in seeds]
+        split_low = _metric_stats([metric.split_risk for metric in low_metrics])
+        split_base = _metric_stats([metric.split_risk for metric in base_metrics])
+        split_high = _metric_stats([metric.split_risk for metric in high_metrics])
+        split_delta = split_high.mean - split_low.mean
+        control_delta = mean(metric.central_control for metric in high_metrics) - mean(metric.central_control for metric in low_metrics)
+        escalation_delta = mean(metric.cold_war.escalation_risk for metric in high_metrics) - mean(
+            metric.cold_war.escalation_risk for metric in low_metrics
+        )
+        trade_delta = mean(metric.trade_throughput for metric in high_metrics) - mean(metric.trade_throughput for metric in low_metrics)
+        pooled_std = max(0.001, (split_low.stddev + split_high.stddev) / 2)
+        effect_ratio = abs(split_delta) / pooled_std
+        confidence = "high" if effect_ratio >= 1.5 else "medium" if effect_ratio >= 0.75 else "low"
+        score = abs(split_delta) + abs(escalation_delta) * 0.65 + abs(control_delta) * 0.35 + min(1.0, abs(trade_delta) / 1000) * 0.1
+        results.append(
+            SensitivityParameterResult(
+                parameter=parameter,
+                baseline_value=round(baseline_value, 4),
+                low_value=round(low_value, 4),
+                high_value=round(high_value, 4),
+                split_risk_low=split_low,
+                split_risk_baseline=split_base,
+                split_risk_high=split_high,
+                central_control_delta=round(control_delta, 4),
+                split_risk_delta=round(split_delta, 4),
+                escalation_risk_delta=round(escalation_delta, 4),
+                trade_throughput_delta=round(trade_delta, 4),
+                sensitivity_score=round(score, 4),
+                confidence=confidence,
+                interpretation=_sensitivity_interpretation(parameter, split_delta, escalation_delta, control_delta, confidence),
+            )
+        )
+    results.sort(key=lambda item: item.sensitivity_score, reverse=True)
+    result = SensitivityResult(
+        scenario=request.scenario,
+        steps=request.steps,
+        seeds=seeds,
+        results=results,
+        summary=_summarize_sensitivity(results),
+    )
+    return result.model_dump(mode="json")
+
+
 @app.post("/api/ai/chronicle")
 def ai_chronicle(payload: dict[str, str]) -> dict[str, object]:
     run_id = payload.get("run_id")
@@ -549,6 +606,56 @@ def _metric_stats(values: list[float]) -> MetricStats:
         stddev=round(sigma, 4),
         ci95_low=round(max(0.0, avg - margin), 4),
         ci95_high=round(avg + margin, 4),
+    )
+
+
+def _final_metric_for(scenario: str, seed: int, steps: int, overrides: dict[str, float]):
+    config = scenario_config(scenario, seed)
+    for key, value in overrides.items():
+        setattr(config, key, _validated_sweep_value(key, value))
+    world = RelativisticCivilizationEngine(config).create_world()
+    RelativisticCivilizationEngine(config).run(world, steps)
+    return world.metrics[-1]
+
+
+def _sensitivity_bounds(parameter: str, baseline: float, perturbation: float) -> tuple[float, float]:
+    ranges = {
+        "centralization": (0.0, 1.0),
+        "ship_velocity_c": (0.05, 0.98),
+        "expansion_pressure": (0.0, 1.0),
+        "federation_bias": (0.0, 1.0),
+    }
+    lower, upper = ranges[parameter]
+    if parameter == "ship_velocity_c":
+        span = max(0.08, perturbation * 0.9)
+    else:
+        span = perturbation
+    return max(lower, baseline - span), min(upper, baseline + span)
+
+
+def _sensitivity_interpretation(parameter: str, split_delta: float, escalation_delta: float, control_delta: float, confidence: str) -> str:
+    direction = "raises" if split_delta > 0.01 else "lowers" if split_delta < -0.01 else "barely changes"
+    cold_war = "and increases cold-war escalation" if escalation_delta > 0.01 else "while easing cold-war escalation" if escalation_delta < -0.01 else "with little cold-war movement"
+    control = "central control improves" if control_delta > 0.01 else "central control weakens" if control_delta < -0.01 else "central control is nearly flat"
+    return f"{parameter} {direction} split risk from low to high values, {cold_war}; {control}. Evidence confidence: {confidence}."
+
+
+def _summarize_sensitivity(results: list[SensitivityParameterResult]) -> SensitivitySummary:
+    strongest = results[0]
+    if strongest.split_risk_delta > 0.01:
+        effect = f"{strongest.parameter} is the strongest destabilizing lever in this local sensitivity scan."
+    elif strongest.split_risk_delta < -0.01:
+        effect = f"{strongest.parameter} is the strongest stabilizing lever in this local sensitivity scan."
+    else:
+        effect = f"{strongest.parameter} has the largest combined effect, but split-risk movement is modest."
+    recommendation = (
+        f"Prioritize robustness checks around `{strongest.parameter}` before drawing policy conclusions. "
+        "Use Monte Carlo for seed uncertainty and counterfactual forks for causal narratives."
+    )
+    return SensitivitySummary(
+        strongest_parameter=strongest.parameter,
+        dominant_effect=effect,
+        recommendation=recommendation,
     )
 
 

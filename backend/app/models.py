@@ -228,7 +228,7 @@ class RunSimulationRequest(BaseModel):
 
 
 SweepParameter = Literal["centralization", "ship_velocity_c", "expansion_pressure", "federation_bias"]
-ExperimentReportKind = Literal["counterfactual", "sweep"]
+ExperimentReportKind = Literal["counterfactual", "sweep", "sensitivity"]
 
 
 class SweepRequest(BaseModel):
@@ -364,6 +364,50 @@ class MonteCarloResult(BaseModel):
     seeds: list[int]
     runs: list[MonteCarloSeedRun]
     summary: MonteCarloSummary
+
+
+class SensitivityRequest(BaseModel):
+    scenario: str = "baseline_empire"
+    parameters: list[SweepParameter] = Field(
+        default_factory=lambda: ["centralization", "ship_velocity_c", "expansion_pressure", "federation_bias"],
+        min_length=1,
+        max_length=4,
+    )
+    steps: int = Field(default=120, ge=1, le=1000)
+    seed_start: int = 200
+    seed_count: int = Field(default=8, ge=3, le=50)
+    perturbation: float = Field(default=0.22, ge=0.05, le=0.45)
+
+
+class SensitivityParameterResult(BaseModel):
+    parameter: SweepParameter
+    baseline_value: float
+    low_value: float
+    high_value: float
+    split_risk_low: MetricStats
+    split_risk_baseline: MetricStats
+    split_risk_high: MetricStats
+    central_control_delta: float
+    split_risk_delta: float
+    escalation_risk_delta: float
+    trade_throughput_delta: float
+    sensitivity_score: float
+    confidence: str
+    interpretation: str
+
+
+class SensitivitySummary(BaseModel):
+    strongest_parameter: SweepParameter
+    dominant_effect: str
+    recommendation: str
+
+
+class SensitivityResult(BaseModel):
+    scenario: str
+    steps: int
+    seeds: list[int]
+    results: list[SensitivityParameterResult]
+    summary: SensitivitySummary
 
 
 class ArchivedRun(BaseModel):

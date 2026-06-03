@@ -121,6 +121,40 @@ def experiment_report(kind: str, payload: dict[str, Any]) -> str:
         )
         return "\n".join(lines) + "\n"
 
+    if kind == "sensitivity":
+        summary = payload.get("summary", {})
+        results = payload.get("results", [])
+        lines = [
+            "# Model Sensitivity Report",
+            "",
+            "## Experiment Setup",
+            f"- Scenario: `{payload.get('scenario', 'unknown')}`",
+            f"- Steps: {payload.get('steps', 'unknown')}",
+            f"- Seeds: `{payload.get('seeds', [])}`",
+            "",
+            "## Summary",
+            f"- Strongest parameter: `{summary.get('strongest_parameter', 'unknown')}`",
+            f"- Dominant effect: {summary.get('dominant_effect', 'unknown')}",
+            f"- Recommendation: {summary.get('recommendation', 'unknown')}",
+            "",
+            "## Parameter Effects",
+        ]
+        for item in results:
+            lines.append(
+                f"- `{item.get('parameter')}`: split delta {item.get('split_risk_delta')}, "
+                f"escalation delta {item.get('escalation_risk_delta')}, confidence {item.get('confidence')}"
+            )
+        lines.extend(
+            [
+                "",
+                "## Limitations",
+                "- This is a local perturbation scan, not global calibration against external historical data.",
+                "- Confidence is based on simulated seed variance and should be read as model-internal robustness.",
+                "- Parameters can interact nonlinearly; follow up strong effects with counterfactual and Monte Carlo runs.",
+            ]
+        )
+        return "\n".join(lines) + "\n"
+
     return "# Experiment Report\n\nUnsupported report kind.\n"
 
 

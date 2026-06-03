@@ -281,3 +281,34 @@ export interface MonteCarloResult {
   runs: MonteCarloSeedRun[];
   summary: MonteCarloSummary;
 }
+
+export interface SensitivityParameterResult {
+  parameter: SweepParameter;
+  baseline_value: number;
+  low_value: number;
+  high_value: number;
+  split_risk_low: MetricStats;
+  split_risk_baseline: MetricStats;
+  split_risk_high: MetricStats;
+  central_control_delta: number;
+  split_risk_delta: number;
+  escalation_risk_delta: number;
+  trade_throughput_delta: number;
+  sensitivity_score: number;
+  confidence: "low" | "medium" | "high";
+  interpretation: string;
+}
+
+export interface SensitivitySummary {
+  strongest_parameter: SweepParameter;
+  dominant_effect: string;
+  recommendation: string;
+}
+
+export interface SensitivityResult {
+  scenario: string;
+  steps: number;
+  seeds: number[];
+  results: SensitivityParameterResult[];
+  summary: SensitivitySummary;
+}

@@ -325,3 +325,42 @@ def test_monte_carlo_is_deterministic() -> None:
 def test_monte_carlo_rejects_too_few_seeds() -> None:
     response = client.post("/api/experiments/monte-carlo", json={"scenario": "baseline_empire", "seeds": [1, 2], "steps": 20})
     assert response.status_code == 422
+
+
+def test_sensitivity_returns_ranked_parameter_effects_and_report() -> None:
+    payload = {
+        "scenario": "baseline_empire",
+        "parameters": ["centralization", "federation_bias"],
+        "steps": 35,
+        "seed_start": 70,
+        "seed_count": 4,
+        "perturbation": 0.2,
+    }
+    body = client.post("/api/experiments/sensitivity", json=payload).json()
+    assert body["scenario"] == "baseline_empire"
+    assert body["seeds"] == [70, 71, 72, 73]
+    assert len(body["results"]) == 2
+    assert body["results"][0]["sensitivity_score"] >= body["results"][1]["sensitivity_score"]
+    assert {"split_risk_low", "split_risk_baseline", "split_risk_high"} <= set(body["results"][0])
+    assert body["summary"]["strongest_parameter"] in {"centralization", "federation_bias"}
+    report = client.post("/api/experiments/report", json={"kind": "sensitivity", "payload": body}).json()
+    assert "# Model Sensitivity Report" in report["markdown"]
+    assert "Parameter Effects" in report["markdown"]
+
+
+def test_sensitivity_is_deterministic_and_rejects_invalid_parameter() -> None:
+    payload = {
+        "scenario": "centralized_command",
+        "parameters": ["centralization", "ship_velocity_c"],
+        "steps": 30,
+        "seed_start": 80,
+        "seed_count": 3,
+    }
+    first = client.post("/api/experiments/sensitivity", json=payload).json()
+    second = client.post("/api/experiments/sensitivity", json=payload).json()
+    assert first == second
+    invalid = client.post(
+        "/api/experiments/sensitivity",
+        json={"scenario": "baseline_empire", "parameters": ["resources"], "steps": 20, "seed_count": 3},
+    )
+    assert invalid.status_code == 422

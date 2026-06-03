@@ -6,6 +6,7 @@ import type {
   MonteCarloResult,
   Scenario,
   ScenarioCompareResult,
+  SensitivityResult,
   SweepParameter,
   SweepResult,
   WorldSnapshot,
@@ -115,6 +116,13 @@ export function experimentReport(kind: "counterfactual" | "sweep", payload: obje
   });
 }
 
+export function sensitivityReport(payload: object): Promise<{ markdown: string }> {
+  return request<{ markdown: string }>("/api/experiments/report", {
+    method: "POST",
+    body: JSON.stringify({ kind: "sensitivity", payload })
+  });
+}
+
 export function listArchivedRuns(): Promise<ArchivedRun[]> {
   return request<ArchivedRun[]>("/api/archive/runs");
 }
@@ -143,5 +151,19 @@ export function runMonteCarlo(scenario: string, seeds: number[], steps: number):
   return request<MonteCarloResult>("/api/experiments/monte-carlo", {
     method: "POST",
     body: JSON.stringify({ scenario, seeds, steps })
+  });
+}
+
+export function runSensitivity(
+  scenario: string,
+  parameters: SweepParameter[],
+  steps: number,
+  seedStart: number,
+  seedCount: number,
+  perturbation: number
+): Promise<SensitivityResult> {
+  return request<SensitivityResult>("/api/experiments/sensitivity", {
+    method: "POST",
+    body: JSON.stringify({ scenario, parameters, steps, seed_start: seedStart, seed_count: seedCount, perturbation })
   });
 }

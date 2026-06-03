@@ -648,7 +648,7 @@ select {
 .modeSwitch button {
   border-color: transparent;
   background: transparent;
-  min-width: 118px;
+  min-width: 104px;
 }
 
 .modeSwitch button.active {
@@ -767,6 +767,20 @@ select {
   stroke-linecap: round;
 }
 
+.sensitivityBar {
+  fill: rgba(34, 211, 238, 0.58);
+  stroke: rgba(34, 211, 238, 0.82);
+  stroke-width: 1;
+}
+
+.riskDot {
+  fill: var(--amber);
+}
+
+.stableDot {
+  fill: #22c55e;
+}
+
 .chartEmpty {
   min-height: 260px;
   display: grid;
@@ -836,6 +850,12 @@ select {
   gap: 10px;
   align-items: center;
   padding: 10px 12px;
+}
+
+.sensitivityHeader,
+.sensitivityRow {
+  min-width: 980px;
+  grid-template-columns: 1fr 1fr 0.9fr 0.9fr 0.8fr 2.8fr;
 }
 
 .tableHeader {

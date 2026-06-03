@@ -78,6 +78,15 @@ The experiment workspace now includes multi-seed research mode:
 - Estimate split probability, mean split risk, escalation risk, central control, trade throughput, standard deviation, and 95% confidence intervals.
 - Review seed-level outcomes in a table and compare uncertainty bands in a lightweight SVG chart.
 
+## v0.9 Model Credibility Lab
+
+The experiment workspace now includes local sensitivity analysis:
+
+- Scan `centralization`, `ship_velocity_c`, `expansion_pressure`, and `federation_bias` around each scenario baseline.
+- Compare low/base/high perturbations across multiple deterministic seeds.
+- Rank parameters by combined impact on split risk, central control, cold-war escalation, and trade throughput.
+- Generate a rule-based Markdown sensitivity report that states confidence as model-internal robustness, not external validation.
+
 ## Run Backend
 
 ```powershell
@@ -119,6 +128,7 @@ Open the Vite URL, normally `http://localhost:5173`.
 - `POST /api/experiments/sweep`
 - `POST /api/experiments/counterfactual`
 - `POST /api/experiments/monte-carlo`
+- `POST /api/experiments/sensitivity`
 - `POST /api/experiments/report`
 - `POST /api/ai/chronicle`
 - `GET /api/report/{run_id}.md`
