@@ -53,6 +53,15 @@ Traits alter trade, command pressure, frontier science, militarization, and cold
 
 The frontend exposes these through the polity list, a Cold War Stability panel, and experiment metrics for escalation risk and deterrence stability.
 
+## v0.6 Reproducible Experiment Polish
+
+The project now includes the first productization layer:
+
+- GitHub Actions CI for backend tests and frontend builds.
+- Preset experiment buttons for central command stress, fleet-speed cold-war pressure, federal deterrence, and black-hole frontier trade.
+- Markdown report generation is available for both parameter sweeps and counterfactual experiments.
+- Frontend reports can be copied or downloaded directly from the experiment workspace.
+
 ## Run Backend
 
 ```powershell

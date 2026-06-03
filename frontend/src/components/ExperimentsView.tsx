@@ -1,5 +1,5 @@
 import React from "react";
-import { BarChart3, FileText, FlaskConical, GitCompareArrows, LineChart, SlidersHorizontal } from "lucide-react";
+import { BarChart3, Clipboard, Download, FileText, FlaskConical, GitCompareArrows, LineChart, SlidersHorizontal } from "lucide-react";
 import { compareScenarios, experimentReport, runCounterfactual, runSimulation, runSweep } from "../lib/api";
 import type {
   CounterfactualResult,
@@ -35,6 +35,48 @@ const riskFactorLabels: Array<[keyof RiskBreakdown, string]> = [
   ["loyalty_loss", "loyalty"]
 ];
 
+const experimentPresets: Array<{
+  id: string;
+  label: string;
+  scenario: string;
+  parameter: SweepParameter;
+  metric: ExperimentMetricKey;
+  values: number[];
+}> = [
+  {
+    id: "central-command-delay",
+    label: "Central command stress",
+    scenario: "centralized_command",
+    parameter: "centralization",
+    metric: "split_risk",
+    values: [0.2, 0.38, 0.56, 0.74, 0.9]
+  },
+  {
+    id: "fleet-speed-cold-war",
+    label: "Fleet speed cold war",
+    scenario: "near_light_migration",
+    parameter: "ship_velocity_c",
+    metric: "escalation_risk",
+    values: [0.18, 0.34, 0.5, 0.66, 0.82, 0.94]
+  },
+  {
+    id: "federal-deterrence",
+    label: "Federal deterrence",
+    scenario: "federated_network",
+    parameter: "federation_bias",
+    metric: "deterrence_stability",
+    values: [0, 0.18, 0.36, 0.54, 0.72, 0.9]
+  },
+  {
+    id: "black-hole-frontier",
+    label: "Black hole frontier",
+    scenario: "black_hole_frontier",
+    parameter: "expansion_pressure",
+    metric: "trade_throughput",
+    values: [0.18, 0.32, 0.46, 0.6, 0.74, 0.88]
+  }
+];
+
 interface ExperimentsViewProps {
   scenarios: Scenario[];
   busy: boolean;
@@ -47,6 +89,7 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
   const [scenario, setScenario] = React.useState("baseline_empire");
   const [parameter, setParameter] = React.useState<SweepParameter>("centralization");
   const [metric, setMetric] = React.useState<ExperimentMetricKey>("split_risk");
+  const [sweepValues, setSweepValues] = React.useState<number[]>(parameterDefaults.centralization);
   const [sweep, setSweep] = React.useState<SweepResult>();
   const [comparison, setComparison] = React.useState<ScenarioCompareResult[]>([]);
   const [forkYear, setForkYear] = React.useState(40);
@@ -55,6 +98,7 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
   const [counterVelocity, setCounterVelocity] = React.useState(0.45);
   const [counterfactual, setCounterfactual] = React.useState<CounterfactualResult>();
   const [reportText, setReportText] = React.useState("");
+  const [sweepReportText, setSweepReportText] = React.useState("");
 
   React.useEffect(() => {
     void handleRunSweep();
@@ -76,7 +120,7 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
 
   async function handleRunSweep() {
     const result = await runExperimentTask(`sweeping ${parameter}`, () =>
-      runSweep(scenario, parameter, parameterDefaults[parameter], 140, 42)
+      runSweep(scenario, parameter, sweepValues, 140, 42)
     );
     setSweep(result);
   }
@@ -104,9 +148,29 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
     setReportText(result.markdown);
   }
 
+  async function handleSweepReport() {
+    if (!sweep) return;
+    const result = await runExperimentTask("generating sweep report", () => experimentReport("sweep", sweep));
+    setSweepReportText(result.markdown);
+  }
+
   function handleParameterChange(next: SweepParameter) {
     setParameter(next);
+    setSweepValues(parameterDefaults[next]);
     setSweep(undefined);
+    setSweepReportText("");
+  }
+
+  function handlePreset(id: string) {
+    const preset = experimentPresets.find((item) => item.id === id);
+    if (!preset) return;
+    setScenario(preset.scenario);
+    setParameter(preset.parameter);
+    setMetric(preset.metric);
+    setSweepValues(preset.values);
+    setSweep(undefined);
+    setSweepReportText("");
+    setMode("sweep");
   }
 
   const ranked = [...(sweep?.runs ?? [])].sort((a, b) => b.peak_split_risk - a.peak_split_risk);
@@ -151,6 +215,9 @@ export function ExperimentsView({ scenarios, busy, setBusy, setStatus }: Experim
           handleParameterChange={handleParameterChange}
           handleRunSweep={handleRunSweep}
           handleCompare={handleCompare}
+          handlePreset={handlePreset}
+          handleSweepReport={handleSweepReport}
+          reportText={sweepReportText}
         />
       ) : (
         <CounterfactualWorkspace
@@ -195,6 +262,9 @@ function SweepWorkspace(props: {
   handleParameterChange: (value: SweepParameter) => void;
   handleRunSweep: () => void;
   handleCompare: () => void;
+  handlePreset: (id: string) => void;
+  handleSweepReport: () => void;
+  reportText: string;
 }) {
   return (
     <>
@@ -217,6 +287,13 @@ function SweepWorkspace(props: {
           </label>
           <MetricSelect metric={props.metric} setMetric={props.setMetric} busy={props.busy} />
           <p className="scenarioCopy">{props.selectedScenario?.description}</p>
+          <div className="presetGrid">
+            {experimentPresets.map((preset) => (
+              <button key={preset.id} onClick={() => props.handlePreset(preset.id)} disabled={props.busy}>
+                {preset.label}
+              </button>
+            ))}
+          </div>
           <button className="primary" onClick={props.handleRunSweep} disabled={props.busy}>
             <FlaskConical size={16} />
             Run sweep
@@ -224,6 +301,10 @@ function SweepWorkspace(props: {
           <button onClick={props.handleCompare} disabled={props.busy}>
             <GitCompareArrows size={16} />
             Compare scenarios
+          </button>
+          <button onClick={props.handleSweepReport} disabled={props.busy || !props.sweep}>
+            <FileText size={16} />
+            Generate sweep report
           </button>
         </section>
 
@@ -264,6 +345,7 @@ function SweepWorkspace(props: {
         </section>
       </div>
       <SweepTables ranked={props.ranked} comparison={props.comparison} parameter={props.parameter} />
+      {props.reportText && <MarkdownReport markdown={props.reportText} filename="sweep-report.md" />}
     </>
   );
 }
@@ -354,16 +436,28 @@ function CounterfactualWorkspace(props: {
         <BranchComparison result={props.result} />
       </section>
 
-      {props.reportText && (
-        <section className="panel reportPanel">
-          <div className="panelHeader">
-            <span>markdown report</span>
-            <FileText size={16} />
-          </div>
-          <pre>{props.reportText}</pre>
-        </section>
-      )}
+      {props.reportText && <MarkdownReport markdown={props.reportText} filename="counterfactual-report.md" />}
     </>
+  );
+}
+
+function MarkdownReport({ markdown, filename }: { markdown: string; filename: string }) {
+  return (
+    <section className="panel reportPanel">
+      <div className="panelHeader">
+        <span>markdown report</span>
+        <div className="reportActions">
+          <button onClick={() => downloadMarkdown(markdown, filename)} aria-label="Download report">
+            <Download size={15} />
+          </button>
+          <button onClick={() => void navigator.clipboard?.writeText(markdown)} aria-label="Copy report">
+            <Clipboard size={15} />
+          </button>
+          <FileText size={16} />
+        </div>
+      </div>
+      <pre>{markdown}</pre>
+    </section>
   );
 }
 
@@ -636,4 +730,14 @@ function metricValue(metric: Metric, key: ExperimentMetricKey) {
   if (key === "escalation_risk") return metric.cold_war.escalation_risk;
   if (key === "deterrence_stability") return metric.cold_war.deterrence_stability;
   return Number(metric[key]);
+}
+
+function downloadMarkdown(markdown: string, filename: string) {
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
