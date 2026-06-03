@@ -129,6 +129,10 @@ export function ArchiveView({ busy, setBusy, setStatus, onLoadRun }: ArchiveView
                   <Download size={15} />
                   Metrics CSV
                 </a>
+                <a href={`/api/archive/runs/${selected.run_id}/manifest.json`}>
+                  <Download size={15} />
+                  Manifest JSON
+                </a>
                 <button onClick={() => removeRun(selected.run_id)} disabled={busy}>
                   <Trash2 size={15} />
                   Delete

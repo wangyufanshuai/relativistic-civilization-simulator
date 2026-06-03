@@ -30,6 +30,7 @@ def test_openapi_contract_includes_public_routes() -> None:
         "/api/archive/runs/{run_id}",
         "/api/archive/runs/{run_id}/snapshots",
         "/api/archive/runs/{run_id}/report.md",
+        "/api/archive/runs/{run_id}/manifest.json",
         "/api/archive/runs/{run_id}/pin",
         "/api/archive/runs/{run_id}/unpin",
         "/api/experiments/compare",
@@ -41,5 +42,6 @@ def test_openapi_contract_includes_public_routes() -> None:
         "/api/ai/chronicle",
         "/api/report/{run_id}.md",
         "/api/exports/{run_id}.csv",
+        "/api/exports/{run_id}.manifest.json",
     }
     assert expected <= paths

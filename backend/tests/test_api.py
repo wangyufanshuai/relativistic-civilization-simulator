@@ -37,6 +37,13 @@ def test_api_simulation_flow_and_exports() -> None:
     assert {"systems", "polities", "fleets", "messages", "events", "metrics"} <= set(snapshots[-1])
     assert client.get(f"/api/report/{run_id}.md").text.startswith("# Relativistic Civilization Report")
     assert client.get(f"/api/exports/{run_id}.csv").status_code == 200
+    manifest = client.get(f"/api/exports/{run_id}.manifest.json").json()
+    assert manifest["run_id"] == run_id
+    assert manifest["scenario"] == "baseline_empire"
+    assert manifest["seed"] == 11
+    assert manifest["diagnostics"]["version"]
+    assert manifest["final_metrics"]["year"] == stepped["latest"]["year"]
+    assert manifest["reproducibility"]["openapi_contract"] == "docs/openapi.json"
     assert client.post("/api/ai/chronicle", json={"run_id": run_id}).json()["provider"] in {"offline", "configured"}
 
 
@@ -284,6 +291,10 @@ def test_archive_persists_run_snapshots_and_report() -> None:
     report = client.get(f"/api/archive/runs/{run_id}/report.md")
     assert report.status_code == 200
     assert report.text.startswith("# Relativistic Civilization Report")
+    manifest = client.get(f"/api/archive/runs/{run_id}/manifest.json")
+    assert manifest.status_code == 200
+    assert manifest.json()["run_id"] == run_id
+    assert manifest.json()["snapshot_count"] >= 2
     assert client.get("/api/archive/runs").json()[0]["report_available"] in {True, False}
 
 

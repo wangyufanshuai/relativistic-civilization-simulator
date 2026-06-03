@@ -447,3 +447,20 @@ class Diagnostics(BaseModel):
     database_path: str
     scenario_count: int
     capabilities: list[str]
+
+
+class RunManifest(BaseModel):
+    manifest_version: str = "1.0"
+    generated_at: str
+    run_id: str
+    scenario: str
+    seed: int
+    year: int
+    service_version: str
+    config: SimulationConfig
+    diagnostics: Diagnostics
+    final_metrics: RelativisticMetrics
+    event_count: int
+    snapshot_count: int
+    report_available: bool
+    reproducibility: dict[str, object]

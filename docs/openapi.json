@@ -560,6 +560,47 @@
         "summary": "Archive Run"
       }
     },
+    "/api/archive/runs/{run_id}/manifest.json": {
+      "get": {
+        "operationId": "archive_manifest_api_archive_runs__run_id__manifest_json_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Archive Manifest Api Archive Runs  Run Id  Manifest Json Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Archive Manifest"
+      }
+    },
     "/api/archive/runs/{run_id}/pin": {
       "post": {
         "operationId": "pin_archive_run_api_archive_runs__run_id__pin_post",
@@ -1037,6 +1078,47 @@
           }
         },
         "summary": "Export Metrics"
+      }
+    },
+    "/api/exports/{run_id}.manifest.json": {
+      "get": {
+        "operationId": "export_manifest_api_exports__run_id__manifest_json_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Export Manifest Api Exports  Run Id  Manifest Json Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Manifest"
       }
     },
     "/api/health": {

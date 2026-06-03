@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 from statistics import mean, stdev
 
@@ -26,6 +27,7 @@ from app.models import (
     MonteCarloResult,
     MonteCarloSeedRun,
     MonteCarloSummary,
+    RunManifest,
     RunSimulationRequest,
     SensitivityParameterResult,
     SensitivityRequest,
@@ -53,7 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SERVICE_VERSION = "1.3.0"
+SERVICE_VERSION = "1.4.0"
 CAPABILITIES = [
     "timeline_replay",
     "risk_breakdown",
@@ -64,6 +66,7 @@ CAPABILITIES = [
     "sensitivity_analysis",
     "openapi_contract",
     "browser_smoke_ci",
+    "run_manifests",
 ]
 
 
@@ -74,6 +77,10 @@ def health() -> dict[str, str]:
 
 @app.get("/api/diagnostics")
 def diagnostics() -> dict[str, object]:
+    return _diagnostics().model_dump(mode="json")
+
+
+def _diagnostics() -> Diagnostics:
     return Diagnostics(
         service="Relativistic Civilization Simulator",
         version=SERVICE_VERSION,
@@ -82,7 +89,7 @@ def diagnostics() -> dict[str, object]:
         database_path=str(store.db_path),
         scenario_count=len(SCENARIOS),
         capabilities=CAPABILITIES,
-    ).model_dump(mode="json")
+    )
 
 
 @app.get("/api/scenarios")
@@ -185,6 +192,14 @@ def archive_report(run_id: str) -> str:
             report_text = markdown_report(store.get(run_id))
             store.save_report(run_id, report_text)
         return report_text
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="archived run not found") from exc
+
+
+@app.get("/api/archive/runs/{run_id}/manifest.json")
+def archive_manifest(run_id: str) -> dict[str, object]:
+    try:
+        return manifest_for_world(store.get(run_id)).model_dump(mode="json")
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="archived run not found") from exc
 
@@ -734,6 +749,51 @@ def export_metrics(run_id: str) -> FileResponse:
     if not Path(path).exists():
         raise HTTPException(status_code=404, detail="export not available")
     return FileResponse(path, media_type="text/csv", filename=f"{run_id}-metrics.csv")
+
+
+@app.get("/api/exports/{run_id}.manifest.json")
+def export_manifest(run_id: str) -> dict[str, object]:
+    try:
+        return manifest_for_world(store.get(run_id)).model_dump(mode="json")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="simulation not found") from exc
+
+
+def manifest_for_world(world: WorldState) -> RunManifest:
+    try:
+        snapshot_count = len(store.snapshots(world.run_id))
+    except KeyError:
+        snapshot_count = 0
+    report_available = False
+    try:
+        report_available = bool(store.report(world.run_id))
+    except KeyError:
+        report_available = False
+    return RunManifest(
+        generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
+        run_id=world.run_id,
+        scenario=world.config.scenario,
+        seed=world.config.seed,
+        year=world.year,
+        service_version=SERVICE_VERSION,
+        config=world.config,
+        diagnostics=_diagnostics(),
+        final_metrics=world.metrics[-1],
+        event_count=len(world.events),
+        snapshot_count=snapshot_count,
+        report_available=report_available,
+        reproducibility={
+            "engine": "RelativisticCivilizationEngine",
+            "time_unit": "year",
+            "space_unit": "light_year",
+            "speed_of_light": "1 ly/year",
+            "run_endpoint": "/api/simulations/run",
+            "state_endpoint": f"/api/simulations/{world.run_id}/state",
+            "metrics_endpoint": f"/api/simulations/{world.run_id}/metrics",
+            "snapshots_endpoint": f"/api/simulations/{world.run_id}/snapshots",
+            "openapi_contract": "docs/openapi.json",
+        },
+    )
 
 
 def summarize_world(world: WorldState) -> dict[str, object]:

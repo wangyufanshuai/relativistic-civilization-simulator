@@ -120,6 +120,15 @@ The backend exposes `GET /api/diagnostics` for deployment and demo observability
 - The frontend top bar shows a compact diagnostics summary after bootstrap.
 - Browser smoke checks verify the diagnostics surface renders through the preview proxy.
 
+## v1.4 Reproducible Run Manifests
+
+Every archived or active run can now export a reproducibility manifest:
+
+- `GET /api/exports/{run_id}.manifest.json` returns scenario, seed, configuration, diagnostics, final metrics, and replay endpoints.
+- `GET /api/archive/runs/{run_id}/manifest.json` provides the same manifest from the persistent archive.
+- Archive run actions include a direct Manifest JSON download link.
+- Browser smoke checks verify the manifest action is visible through the built preview.
+
 ## Run Backend
 
 ```powershell
@@ -155,6 +164,7 @@ Open the Vite URL, normally `http://localhost:5173`.
 - `GET /api/archive/runs/{run_id}`
 - `GET /api/archive/runs/{run_id}/snapshots`
 - `GET /api/archive/runs/{run_id}/report.md`
+- `GET /api/archive/runs/{run_id}/manifest.json`
 - `DELETE /api/archive/runs/{run_id}`
 - `POST /api/archive/runs/{run_id}/pin`
 - `POST /api/archive/runs/{run_id}/unpin`
@@ -167,6 +177,7 @@ Open the Vite URL, normally `http://localhost:5173`.
 - `POST /api/ai/chronicle`
 - `GET /api/report/{run_id}.md`
 - `GET /api/exports/{run_id}.csv`
+- `GET /api/exports/{run_id}.manifest.json`
 
 ## Test
 

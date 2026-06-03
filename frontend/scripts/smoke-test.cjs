@@ -54,6 +54,7 @@ async function main() {
   await page.getByLabel("archive").click();
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("persistent research archive"), null, { timeout: 10000 });
   await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("archived runs"), null, { timeout: 10000 });
+  await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("manifest json"), null, { timeout: 10000 });
 
   if (errors.length > 0) {
     throw new Error(`Browser smoke test saw console/page errors: ${errors.join(" | ")}`);
