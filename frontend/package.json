@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "smoke": "node scripts/smoke-test.cjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
@@ -24,4 +25,3 @@
     "playwright": "^1.60.0"
   }
 }
-

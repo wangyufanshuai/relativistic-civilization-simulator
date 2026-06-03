@@ -7,3 +7,5 @@ frontend/dist/
 data/runs/
 data/*.sqlite
 vite-*.log
+preview-*.log
+*-smoke.log

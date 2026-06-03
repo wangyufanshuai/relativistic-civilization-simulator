@@ -87,6 +87,14 @@ The experiment workspace now includes local sensitivity analysis:
 - Rank parameters by combined impact on split risk, central control, cold-war escalation, and trade throughput.
 - Generate a rule-based Markdown sensitivity report that states confidence as model-internal robustness, not external validation.
 
+## v1.0 Engineering Hardening
+
+The repository now includes browser-level release checks:
+
+- Vite preview proxies `/api` to the FastAPI backend, matching the production preview path used by CI.
+- `npm run smoke` launches a Playwright Chromium smoke test against the built app.
+- GitHub Actions runs backend tests, frontend build, and an end-to-end browser smoke job that covers Simulation, Experiments, Archive, and `/api/health`.
+
 ## Run Backend
 
 ```powershell
@@ -139,4 +147,10 @@ Open the Vite URL, normally `http://localhost:5173`.
 ```powershell
 cd E:\xuexi\relativistic-civilization-simulator\backend
 pytest
+```
+
+```powershell
+cd E:\xuexi\relativistic-civilization-simulator\frontend
+npm run build
+npm run smoke
 ```
